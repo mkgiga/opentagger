@@ -16,15 +16,17 @@ An open-source, user-friendly tool for captioning and tagging images!
 - [x] Tag categories
 - [x] Search with working syntax for AND, OR, NOT, etc.
 - [x] Image and tag drag-and-drop
-- [x] Advanced command line interface and API
 - [x] Project save and load
 - [x] Dataset zip export
+- [x] Highlight and order tags on search
+- [x] Advanced command line and API (press F1 to open)
 
 ## Todo
-- [ ] Let the user select more autotagging models to use
+- [ ] Add more tagging models
 - [ ] Click to select image entries
-- [ ] Interface for curation (delete if has x tag, etc.)
-
+- [ ] User-friendly tag curation
+- [ ] User preferences
+      
 ### Prerequisites
 - Have installed Python 3
 
