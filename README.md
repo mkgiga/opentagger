@@ -35,14 +35,18 @@ An open-source, user-friendly tool for captioning and tagging images!
 
 ## Installing
 
-*todo: add release packages*
+### Release
+You can download the the zip from [here](https://github.com/mkgiga/opentagger/releases/download/major/opentagger.zip)
+Once you've extracted it, Windows users should right-click `run.ps1` and select `Run with PowerShell`. Linux users cd in and `chmod +x ./run.sh` then `./run.sh`
 
-### Windows
+### Manual
+
+#### Windows
 1. Clone the repository by entering `git clone https://github.com/mkgiga/opentagger.git` in the command line.
 2. Then run `explorer .` to open the file explorer
 3. Open the `opentagger` folder, **right-click on `run.ps1` and select "Run with PowerShell"**
 
-### Linux
+#### Linux
 ```bash
 git clone https://github.com/mkgiga/opentagger.git
 cd opentagger
