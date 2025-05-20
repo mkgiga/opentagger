@@ -35,6 +35,8 @@ An open-source, user-friendly tool for captioning and tagging images!
 
 ## Installing
 
+If you don't care about the auto-tagging feature, you can just download `index.html` from the root directory and double click it to open it in your browser, otherwise, follow the instructions below
+
 ### Release
 You can download the the zip from [here](https://github.com/mkgiga/opentagger/releases/download/major/opentagger.zip)
 Once you've extracted it, Windows users should right-click `run.ps1` and select `Run with PowerShell`. Linux users cd in and `chmod +x ./run.sh` then `./run.sh`
