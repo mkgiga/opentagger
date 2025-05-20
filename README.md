@@ -24,14 +24,14 @@ An open-source, user-friendly tool for captioning and tagging images!
 - [ ] Interface for curation (delete if has x tag, etc.)
 
 ### Prerequisites
-- Python installed
+- Have installed Python 3
 
 > [!WARNING]
 > I have only tested this with Python 3.10 but it should work with 3.11, if there are any problems feel free to open an issue 😀
 
 ## Installing
 
-todo: add release packages
+*todo: add release packages*
 
 ### Windows
 1. Clone the repository by entering `git clone https://github.com/mkgiga/opentagger.git` in the command line.
