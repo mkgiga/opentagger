@@ -17,6 +17,8 @@ An open-source, user-friendly tool for captioning and tagging images!
 - [x] Search with working syntax for AND, OR, NOT, etc.
 - [x] Image and tag drag-and-drop
 - [x] Advanced command line interface and API
+- [x] Project save and load
+- [x] Dataset zip export
 
 ## Todo
 - [ ] Let the user select more autotagging models to use
