@@ -2,7 +2,6 @@
 setlocal
 
 set "SCRIPT_DIR=%~dp0"
-
 if "%SCRIPT_DIR:~-1%"=="\" set "SCRIPT_DIR=%SCRIPT_DIR:~0,-1%"
 
 set "AUTOTAG_DIR=%SCRIPT_DIR%\autotag"
@@ -18,11 +17,13 @@ set "PYTHONPATH=%SCRIPT_DIR%;%PYTHONPATH%"
 echo PYTHONPATH is now: %PYTHONPATH%
 echo.
 
+echo DEBUG: Value of VENV_ACTIVATE_SCRIPT is [%VENV_ACTIVATE_SCRIPT%]
+echo DEBUG: About to check existence of the above path.
+
 if not exist "%VENV_ACTIVATE_SCRIPT%" (
   echo Virtual environment activation script not found at: %VENV_ACTIVATE_SCRIPT%
   echo Attempting to create virtual environment and install requirements...
   echo.
-  
   
   if not exist "%AUTOTAG_DIR%\" (
     echo WARNING: AUTOTAG_DIR does not exist: %AUTOTAG_DIR%
@@ -50,8 +51,6 @@ if not exist "%VENV_ACTIVATE_SCRIPT%" (
   )
   
   echo Looking for a suitable Python interpreter (Python 3.3+ with venv module)...
-  
-  
   python -m venv --help >nul 2>nul
   if errorlevel 1 (
     echo ERROR: 'python -m venv' command failed or Python was not found.
@@ -95,8 +94,6 @@ if not exist "%VENV_ACTIVATE_SCRIPT%" (
   echo.
   
   echo Installing requirements from: %REQUIREMENTS_FILE%
-  
-  
   if not exist "%VENV_PYTHON_EXE%" (
     echo ERROR: Python executable not found in new venv: %VENV_PYTHON_EXE%
     echo This is unexpected after venv creation and activation.
@@ -113,7 +110,7 @@ if not exist "%VENV_ACTIVATE_SCRIPT%" (
   echo Requirements installed successfully.
   echo.
   
-  ) else (
+) else (
   echo Activating existing virtual environment from: %VENV_ACTIVATE_SCRIPT%
   call "%VENV_ACTIVATE_SCRIPT%"
   if errorlevel 1 (
@@ -164,7 +161,6 @@ echo Current directory is now: %CD%
 echo.
 
 echo Launching Python API server: %PYTHON_SCRIPT_TO_RUN%
-
 for %%F in ("%PYTHON_SCRIPT_TO_RUN%") do set "PYTHON_SCRIPT_FILENAME=%%~nxF"
 
 if not exist "%PYTHON_SCRIPT_FILENAME%" (
