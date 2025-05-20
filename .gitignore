@@ -1,0 +1,9 @@
+# ide configs
+.vscode/
+.idea/
+
+# npm packages
+node_modules/
+
+# we dont build anything yet but in the future we might
+dist/
