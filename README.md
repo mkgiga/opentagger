@@ -40,7 +40,7 @@ An open-source, user-friendly tool for captioning and tagging images!
 ### Windows
 1. Clone the repository by entering `git clone https://github.com/mkgiga/opentagger.git` in the command line.
 2. Then run `explorer .` to open the file explorer
-3. Open the `opentagger` folder and double-click on `run.bat` to start the application.
+3. Open the `opentagger` folder, **right-click on `run.ps1` and select "Run with PowerShell"**
 
 ### Linux
 ```bash
