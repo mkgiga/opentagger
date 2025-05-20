@@ -57,4 +57,4 @@ THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR I
 
 ## Acknowledgements
 - [SmilingWolf/wd-vit-tagger-v3](https://huggingface.co/SmilingWolf/wd-vit-tagger-v3) Thank you [SmilingWolf](https://huggingface.co/SmilingWolf) for the autotagging model!
-- [wdv3_timm](https://github.com/neggles/wdv3-timm) ...and [neggles](https://github.com/neggles) for the tagging script!
+- [wdv3_timm](https://github.com/neggles/wdv3-timm) ...and [neggles](https://github.com/neggles) too for the tagging script!
