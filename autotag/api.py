@@ -11,7 +11,7 @@ import random
 import re
 from io import BytesIO
 import webbrowser
-from contextlib import asynccontextmanager # <--- ADDED FOR LIFESPAN
+from contextlib import asynccontextmanager
 
 import uvicorn
 from fastapi import FastAPI, HTTPException, Request, File, UploadFile
