@@ -567,6 +567,7 @@
                 background-color: #fdfdfd;
                 transition: box-shadow 0.2s ease, border-color 0.3s ease;
                 position: relative;
+                cursor: default; /* For selection clicks */
             }
 
             dataset-entry.requirement-not-met {
@@ -1122,6 +1123,13 @@
         </style>
     </head>
     <body>
+        <audio id="sfxWelcome" src="assets/jingle.ogg"></audio>
+        <audio id="sfxGood1" src="assets/sweet.ogg"></audio>
+        <audio id="sfxGood2" src="assets/sweet2.ogg"></audio>
+        <audio id="sfxGood3" src="assets/sweet3.ogg"></audio>
+        <audio id="sfxBad" src="assets/uhoh.ogg"></audio>
+        <audio id="sfxGoodnight" src="assets/goodnight.ogg"></audio>
+
         <nav id="menu-bar">
             <button>File</button>
             <button>Edit</button>
@@ -1186,7 +1194,7 @@
                                     <span class="material-icons">history</span>
                                     <span
                                         >No recent projects to show. Feature
-                                        coming soon&trade;</span
+                                        coming soon™</span
                                     >
                                 </li>
                             </ul>
@@ -1369,7 +1377,7 @@
         <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/addon/edit/closebrackets.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/addon/edit/matchbrackets.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/addon/comment/comment.min.js"></script>
-        <script>
+        <script defer>
             "use strict";
 
             let draggedElement = null;
@@ -1386,6 +1394,7 @@
 
             let g_parsedSearchTerms = [];
             let g_searchTermColors = {};
+            let g_lastClickedEntryForShiftSelect = null;
 
             let devConsoleElement = null;
             let consoleOutputElement = null;
@@ -1396,6 +1405,29 @@
             let consoleHistoryIndex = -1;
             let currentConsoleInputBuffer = "";
             let hasShownConsoleWelcomeMessage = false;
+
+            /**
+             * @type {{ [id: string]: HTMLAudioElement }}
+             */
+            const sfx = {
+                sfxWelcome: null,
+                sfxGood1: null,
+                sfxGood2: null,
+                sfxGood3: null,
+                sfxBad: null,
+                sfxGoodnight: null,
+            };
+
+            const fadeOutAudioContext = new AudioContext({
+                sampleRate: 44100,
+                latencyHint: "interactive",
+            });
+            
+            for (const key in sfx) {
+                const audio = document.getElementById(key);
+                audio.volume = 0.1;
+                sfx[key] = audio;
+            };
 
             async function checkBackendReady(maxRetries = 30, delay = 1000) {
                 console.log(
@@ -1487,6 +1519,9 @@
                     }
 
                     sortSelectedEntriesToTop();
+                    g_lastClickedEntryForShiftSelect =
+                        opentaggerAPI.getSelectedEntries().pop() || null;
+
 
                     const message =
                         `Selected ${selectionCount} entr${
@@ -1518,6 +1553,7 @@
                     }
 
                     sortSelectedEntriesToTop();
+                    g_lastClickedEntryForShiftSelect = null;
 
                     const message = `Deselected ${deselectionCount} entr${
                         deselectionCount === 1 ? "y" : "ies"
@@ -1566,6 +1602,8 @@
                     }
 
                     sortSelectedEntriesToTop();
+                     g_lastClickedEntryForShiftSelect = opentaggerAPI.getSelectedEntries().pop() || null;
+
 
                     const keptCount = selectedEntries.length - deselectedCount;
                     return `Filter applied to ${
@@ -1573,6 +1611,65 @@
                     } selected entr${
                         selectedEntries.length === 1 ? "y" : "ies"
                     }. Kept: ${keptCount}, Deselected: ${deselectedCount}. Query: "${query}"`;
+                },
+                addTagsToSelected: (tagsArray) => {
+                    const selectedEntries = opentaggerAPI.getSelectedEntries();
+                    if (selectedEntries.length === 0) {
+                        return "No entries selected. No tags added.";
+                    }
+                    if (!Array.isArray(tagsArray) || tagsArray.length === 0) {
+                        return "No tags provided to add.";
+                    }
+
+                    let totalTagsAdded = 0;
+                    let entriesModified = 0;
+
+                    for (const entry of selectedEntries) {
+                        let tagsAddedToThisEntry = 0;
+                        for (const tag of tagsArray) {
+                            if (entry.addTag(tag)) {
+                                tagsAddedToThisEntry++;
+                            }
+                        }
+                        if (tagsAddedToThisEntry > 0) {
+                            totalTagsAdded += tagsAddedToThisEntry;
+                            entriesModified++;
+                        }
+                    }
+                    return `Added ${totalTagsAdded} tag(s) across ${entriesModified} selected entr${entriesModified === 1 ? "y" : "ies"}.`;
+                },
+                removeTagsFromSelected: (tagsArray) => {
+                    const selectedEntries = opentaggerAPI.getSelectedEntries();
+                     if (selectedEntries.length === 0) {
+                        return "No entries selected. No tags removed.";
+                    }
+                    if (!Array.isArray(tagsArray) || tagsArray.length === 0) {
+                        return "No tags provided to remove.";
+                    }
+
+                    const tagsToRemoveLower = tagsArray.map(t => String(t).trim().toLowerCase()).filter(t => t);
+                    if (tagsToRemoveLower.length === 0) {
+                         return "No valid tags provided to remove after processing.";
+                    }
+
+                    let totalTagsRemoved = 0;
+                    let entriesModified = 0;
+
+                    for (const entry of selectedEntries) {
+                        const currentTags = entry.getTags();
+                        const initialTagCount = currentTags.length;
+
+                        const newTags = currentTags.filter(tag =>
+                            !tagsToRemoveLower.includes(tag.toLowerCase())
+                        );
+
+                        if (newTags.length < initialTagCount) {
+                            entry.setTags(newTags); // setTags will trigger updates
+                            totalTagsRemoved += (initialTagCount - newTags.length);
+                            entriesModified++;
+                        }
+                    }
+                    return `Removed ${totalTagsRemoved} tag(s) across ${entriesModified} selected entr${entriesModified === 1 ? "y" : "ies"}.`;
                 },
                 help: () => {
                     const apiHelp = `Available opentaggerAPI functions (callable directly in JS console):\n${Object.keys(
@@ -1934,6 +2031,28 @@
                     },
                     signature: "",
                     apiRef: "deselectAllEntries",
+                },
+                add: {
+                    func: (args) => {
+                        if (args.length < 2) return "Usage: /add <tag1>, [tag2], ...";
+                        const rawTagsString = args.slice(1).join(" ");
+                        const tagsArray = parseRawTagInput(rawTagsString);
+                        if (tagsArray.length === 0) return "No valid tags provided.";
+                        return opentaggerAPI.addTagsToSelected(tagsArray);
+                    },
+                    signature: "<tag1>, [tag2 with spaces], ...",
+                    apiRef: "addTagsToSelected",
+                },
+                remove: {
+                    func: (args) => {
+                         if (args.length < 2) return "Usage: /remove <tag1>, [tag2], ...";
+                        const rawTagsString = args.slice(1).join(" ");
+                        const tagsArray = parseRawTagInput(rawTagsString);
+                        if (tagsArray.length === 0) return "No valid tags provided.";
+                        return opentaggerAPI.removeTagsFromSelected(tagsArray);
+                    },
+                    signature: "<tag1>, [tag2 with spaces], ...",
+                    apiRef: "removeTagsFromSelected",
                 },
                 clear: {
                     func: (args) => {
@@ -3104,6 +3223,7 @@
                         this._handleImageClick.bind(this);
                     this._boundHandleAutotagClick =
                         this._handleAutotagClick.bind(this);
+                    this._boundHandleEntryClick = this._handleEntryClick.bind(this);
                 }
                 get selected() {
                     return this.hasAttribute("selected");
@@ -3131,7 +3251,7 @@
                         }" title="Click to preview">
                     <tag-list direction="row"></tag-list>
                 </div>
-                <div class="entry-buttons"> 
+                <div class="entry-buttons">
                     <button class="autotag-entry material-icons" title="Autotag Image (AI)" speaker="Autotag Image">auto_awesome</button>
                 </div>
                 <button class="delete-entry material-icons" title="Delete Entry" speaker="Delete Entry">delete_forever</button>`;
@@ -3158,6 +3278,9 @@
 
                     const img = this.querySelector("img");
                     img?.addEventListener("click", this._boundHandleImageClick);
+
+                    this.addEventListener("click", this._boundHandleEntryClick);
+
 
                     this.checkCategoryRequirementsAndUpdateVisuals();
                     this.addDragDropListeners();
@@ -3189,7 +3312,67 @@
                         "click",
                         this._boundHandleAutotagClick
                     );
+                    this.removeEventListener("click", this._boundHandleEntryClick);
                 }
+
+                _handleEntryClick(event) {
+                    // Prevent selection if clicking on an interactive element within the entry
+                    const target = event.target;
+                    if (
+                        target.closest('button') ||
+                        target.closest('dataset-tag') ||
+                        target.closest('span[contenteditable="true"]') ||
+                        target.tagName === 'IMG' // Image click is for preview
+                    ) {
+                        return;
+                    }
+                    event.stopPropagation();
+
+
+                    const isCtrlPressed = event.ctrlKey || event.metaKey; // metaKey for macOS
+                    const isShiftPressed = event.shiftKey;
+
+                    if (isShiftPressed && g_lastClickedEntryForShiftSelect && mainContentAreaElement) {
+                        const allVisibleEntries = Array.from(mainContentAreaElement.querySelectorAll('dataset-entry:not([style*="display: none"])'));
+                        const currentIndex = allVisibleEntries.indexOf(this);
+                        const lastIndex = allVisibleEntries.indexOf(g_lastClickedEntryForShiftSelect);
+
+                        if (currentIndex !== -1 && lastIndex !== -1) {
+                            const start = Math.min(currentIndex, lastIndex);
+                            const end = Math.max(currentIndex, lastIndex);
+
+                            for (const entry of mainContentAreaElement.querySelectorAll('dataset-entry')) {
+                                entry.selected = false;
+                            }
+                            for (let i = start; i <= end; i++) {
+                                if (allVisibleEntries[i]) {
+                                   allVisibleEntries[i].selected = true;
+                                }
+                            }
+                        } else { // Fallback if one of the entries isn't visible or found
+                             this.selected = true;
+                             g_lastClickedEntryForShiftSelect = this;
+                        }
+                    } else if (isCtrlPressed) {
+                        this.toggleSelected();
+                        g_lastClickedEntryForShiftSelect = this.selected ? this : null;
+                    } else {
+                        const wasSelected = this.selected;
+                        for (const entry of mainContentAreaElement.querySelectorAll('dataset-entry[selected]')) {
+                            if (entry !== this) entry.selected = false;
+                        }
+                        // If it was the only one selected, toggle it. Otherwise, select it.
+                        if (opentaggerAPI.getSelectedEntries().length === 1 && wasSelected) {
+                            this.selected = false;
+                             g_lastClickedEntryForShiftSelect = null;
+                        } else {
+                            this.selected = true;
+                            g_lastClickedEntryForShiftSelect = this;
+                        }
+                    }
+                    sortSelectedEntriesToTop();
+                }
+
                 _handleImageClick(e) {
                     e.stopPropagation();
                     if (this.imageSrc) {
@@ -3653,7 +3836,7 @@
                 }
                 connectedCallback() {
                     const name =
-                        this.getAttribute("category-name") || "New Cat";
+                        this.getAttribute("category-name") || "New Category";
                     const tags = Array.from(
                         this.querySelectorAll("dataset-tag")
                     );
@@ -4346,30 +4529,22 @@
                     const bSelected = b.hasAttribute("selected");
                     if (aSelected && !bSelected) return -1;
                     if (!aSelected && bSelected) return 1;
-                    return 0;
+
+                    // If selection status is the same, maintain original relative order (approximated by current DOM order)
+                    // This is a bit tricky as querySelectorAll doesn't guarantee order if elements are moved.
+                    // A more robust way would be to store original indices if this becomes an issue.
+                    // For now, this should be mostly fine.
+                    const allEntriesInDom = Array.from(mainContentAreaElement.children);
+                    const aIndex = allEntriesInDom.indexOf(a);
+                    const bIndex = allEntriesInDom.indexOf(b);
+                    return aIndex - bIndex;
                 });
 
-                let insertReferenceNode = dropHint?.isConnected
-                    ? dropHint
-                    : null;
-
+                // Re-append in sorted order
                 for (const entry of entries) {
-                    if (
-                        insertReferenceNode &&
-                        insertReferenceNode.parentElement ===
-                            mainContentAreaElement
-                    ) {
-                        mainContentAreaElement.insertBefore(
-                            entry,
-                            insertReferenceNode
-                        );
-                    } else {
-                        mainContentAreaElement.insertBefore(
-                            entry,
-                            mainContentAreaElement.firstChild
-                        );
-                    }
+                     mainContentAreaElement.appendChild(entry);
                 }
+
 
                 if (
                     dropHint &&
@@ -4620,6 +4795,8 @@
                         entry.checkCategoryRequirementsAndUpdateVisuals();
                     }
                 }
+
+                sfx.sfxWelcome.play();
             }
 
             function clearWorkspaceForNewProject() {
@@ -4645,7 +4822,7 @@
                     filterEntries("");
                 }
 
-                opentaggerAPI.deselectAllEntries(true);
+                opentaggerAPI.deselectAllEntries(true); // This also clears g_lastClickedEntryForShiftSelect
 
                 checkDropHintVisibility();
                 console.log("Workspace cleared for new project.");
@@ -5148,6 +5325,15 @@
                                             filterEntries("");
                                         },
                                     },
+                                     { type: "divider" },
+                                    {
+                                        label: "Select All Visible",
+                                        callback: () => opentaggerAPI.selectEntries("", false)
+                                    },
+                                    {
+                                        label: "Deselect All",
+                                        callback: () => opentaggerAPI.deselectAllEntries()
+                                    },
                                     { type: "divider" },
                                     { label: "Prefs (NYI)" },
                                 ];
@@ -5222,40 +5408,75 @@
                         if (entry) {
                             e.preventDefault();
                             e.stopPropagation();
-                            createContextMenu(
-                                [
-                                    {
-                                        label: "Preview Image",
-                                        callback: () =>
-                                            entry._handleImageClick(e),
-                                    },
-                                    {
-                                        label: "Autotag Image (AI)",
-                                        callback: () =>
-                                            entry._handleAutotagClick(e),
-                                    },
-                                    { type: "divider" },
-                                    { label: `Copy Tags (NYI)` },
-                                    { label: `Paste Tags (NYI)` },
-                                    { type: "divider" },
-                                    {
-                                        label: "Apply Category Tags",
-                                        items: getCategorySubmenuItems(entry),
-                                    },
-                                    { type: "divider" },
-                                    {
-                                        label: "Check Requirements",
-                                        callback: () =>
-                                            entry.checkCategoryRequirementsAndUpdateVisuals(),
-                                    },
-                                    { type: "divider" },
-                                    {
-                                        label: "Delete Entry",
-                                        callback: () => entry.deleteEntry(),
-                                    },
-                                ],
-                                e
-                            );
+                            // Ensure the clicked entry is selected if no other selection modifiers are used
+                            if (!entry.selected && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
+                                opentaggerAPI.deselectAllEntries(true);
+                                entry.selected = true;
+                                g_lastClickedEntryForShiftSelect = entry;
+                                sortSelectedEntriesToTop();
+                            }
+
+
+                            const selectedCount = opentaggerAPI.getSelectedEntries().length;
+                            const contextMenuItems = [
+                                {
+                                    label: "Preview Image",
+                                    callback: () =>
+                                        entry._handleImageClick(e),
+                                },
+                                {
+                                    label: "Autotag Image (AI)",
+                                    callback: () =>
+                                        entry._handleAutotagClick(e),
+                                },
+                                { type: "divider" },
+                                { label: `Copy Tags (${selectedCount} selected) (NYI)` },
+                                { label: `Paste Tags (${selectedCount} selected) (NYI)` },
+                                { type: "divider" },
+                                {
+                                    label: `Add Tags to ${selectedCount} Selected... (NYI via UI)`,
+                                    // callback: () => { /* TODO: Prompt for tags */ }
+                                },
+                                {
+                                    label: `Remove Tags from ${selectedCount} Selected... (NYI via UI)`,
+                                     // callback: () => { /* TODO: Prompt for tags */ }
+                                },
+                                { type: "divider" },
+                                {
+                                    label: "Apply Category Tags",
+                                    items: getCategorySubmenuItems(entry), // entry here is context for which entry was right-clicked
+                                },
+                                { type: "divider" },
+                                {
+                                    label: "Check Requirements",
+                                    callback: () =>
+                                        entry.checkCategoryRequirementsAndUpdateVisuals(),
+                                },
+                                { type: "divider" },
+                                {
+                                    label: "Delete Entry",
+                                    callback: () => entry.deleteEntry(),
+                                },
+                            ];
+                             if (selectedCount > 1) {
+                                contextMenuItems.push({ type: "divider" });
+                                contextMenuItems.push({
+                                    label: `Delete ${selectedCount} Selected Entries`,
+                                    callback: () => {
+                                        const entriesToDelete = opentaggerAPI.getSelectedEntries();
+                                        showConfirmationModal(`Are you sure you want to delete ${entriesToDelete.length} selected entries?`, [
+                                            { text: "Delete", class:"modal-button-confirm", onClick: () => {
+                                                for(const en of entriesToDelete) en.deleteEntry();
+                                                g_lastClickedEntryForShiftSelect = null;
+                                            }},
+                                            { text: "Cancel", class:"modal-button-cancel" }
+                                        ]);
+                                    }
+                                });
+                            }
+
+
+                            createContextMenu(contextMenuItems, e);
                         } else if (
                             targetElement.closest(".main-view-header") ||
                             targetElement.closest(".drop-hint") ||
@@ -5286,6 +5507,15 @@
                                                 entry.checkCategoryRequirementsAndUpdateVisuals();
                                             }
                                         },
+                                    },
+                                    { type: "divider" },
+                                    {
+                                        label: "Select All Visible",
+                                        callback: () => opentaggerAPI.selectEntries("", false)
+                                    },
+                                    {
+                                        label: "Deselect All",
+                                        callback: () => opentaggerAPI.deselectAllEntries()
                                     },
                                 ],
                                 e
@@ -5361,23 +5591,27 @@
                     }
                 });
 
-                function getCategorySubmenuItems(entry) {
+                function getCategorySubmenuItems(rightClickedEntry) {
                     const cats = document.querySelectorAll(
                         "#tag-category-list tag-category"
                     );
                     const items = [];
+                    const selectedEntries = opentaggerAPI.getSelectedEntries();
+                    const targetEntries = selectedEntries.length > 0 ? selectedEntries : [rightClickedEntry];
+
 
                     for (const cat of cats) {
                         const name = cat.getAttribute("category-name") || "...";
                         const tags = cat.getCategoryTags();
                         if (tags.length > 0)
                             items.push({
-                                label: `Add All from "${name}"`,
+                                label: `Add All from "${name}" to ${targetEntries.length} entr${targetEntries.length === 1 ? 'y' : 'ies'}`,
                                 callback: () => {
                                     let changed = false;
-
-                                    for (const tag of tags) {
-                                        if (entry.addTag(tag)) changed = true;
+                                    for(const entry of targetEntries) {
+                                        for (const tag of tags) {
+                                            if (entry.addTag(tag)) changed = true;
+                                        }
                                     }
                                 },
                             });
@@ -5437,6 +5671,10 @@
                                             requestAnimationFrame(() =>
                                                 entry.checkCategoryRequirementsAndUpdateVisuals()
                                             );
+                                        }
+                                        // If the last clicked entry for shift-select was removed, reset it
+                                        if (g_lastClickedEntryForShiftSelect && removedEntries.includes(g_lastClickedEntryForShiftSelect)) {
+                                            g_lastClickedEntryForShiftSelect = null;
                                         }
                                         break;
                                     }
