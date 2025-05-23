@@ -4,23 +4,34 @@
         <title>opentagger</title>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <link
-            rel="stylesheet"
-            href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/codemirror.min.css"
-        />
-        <link
-            rel="stylesheet"
-            href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/theme/neat.min.css"
-        />
+        <meta name="theme-color" content="#f0f0f0" />
+        <link rel="icon" href="/assets/images/favicon.ico" type="image/x-icon" />
+        
+        <!-- third-party imports -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/codemirror.min.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/theme/neat.min.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/addon/hint/show-hint.min.css" />
+        <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+        
+        <!-- opengraph metadata -->
+        <meta property="og:title" content="opentagger" />
+        <meta property="og:description" content="The easiest way to tag your images." />
+        <meta property="og:image" content="/assets/images/opentagger.png" />
+        <meta property="og:url" content="https://opentagger.org" />
+        <meta property="og:type" content="website" />
+        <meta property="og:site_name" content="opentagger" />
+        <meta property="og:locale" content="en_US" />
+        <meta property="og:locale:alternate" content="en_GB" />
+        <meta property="og:locale:alternate" content="en_CA" />
+        <meta property="og:locale:alternate" content="en_AU" />
 
-        <link
-            rel="stylesheet"
-            href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/addon/hint/show-hint.min.css"
-        />
-        <link
-            href="https://fonts.googleapis.com/icon?family=Material+Icons"
-            rel="stylesheet"
-        />
+        <!-- twitter metadata -->
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="opentagger" />
+        <meta name="twitter:description" content="The easiest way to tag your images." />
+        <meta name="twitter:image" content="/assets/images/opentagger.png" />
+        
+
         <style>
             :root {
                 --menu-bar-height: 28px;
@@ -188,7 +199,7 @@
                 border-radius: 4px;
                 background: none;
                 border: none;
-                text-align: left;
+text-align: left;
                 cursor: pointer;
                 width: 100%;
                 color: var(--splash-ide-text-primary);
@@ -1136,16 +1147,18 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
         </style>
     </head>
     <body>
-        <audio id="sfxWelcome" src="assets/jingle.ogg"></audio>
-        <audio id="sfxGood1" src="assets/sweet.ogg"></audio>
-        <audio id="sfxGood2" src="assets/sweet2.ogg"></audio>
-        <audio id="sfxGood3" src="assets/sweet3.ogg"></audio>
-        <audio id="sfxBad" src="assets/uhoh.ogg"></audio>
-        <audio id="sfxGoodnight" src="assets/goodnight.ogg"></audio>
+        <audio id="sfxWelcome" src="assets/audio/jingle.ogg"></audio>
+        <audio id="sfxGood1" src="assets/audio/sweet.ogg"></audio>
+        <audio id="sfxGood2" src="assets/audio/sweet2.ogg"></audio>
+        <audio id="sfxGood3" src="assets/audio/sweet3.ogg"></audio>
+        <audio id="sfxBad" src="assets/audio/uhoh.ogg"></audio>
+        <audio id="sfxGoodnight" src="assets/audio/goodnight.ogg"></audio>
+        <audio id="sfxPop" src="assets/audio/pop.ogg"></audio>
 
         <nav id="menu-bar">
             <button>File</button>
             <button>Edit</button>
+            <button>Select</button> <!-- Selection-related actions -->
             <button>View</button>
             <button>Help</button>
         </nav>
@@ -1430,6 +1443,7 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                 sfxGood3: null,
                 sfxBad: null,
                 sfxGoodnight: null,
+                sfxPop: null,
             };
 
             const fadeOutAudioContext = new AudioContext({
@@ -1478,7 +1492,7 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                 return false;
             }
 
-            const opentaggerAPI = {
+                        const opentaggerAPI = {
                 search: (...args) => {
                     const query = args.join(" ").trim();
                     if (searchInput) {
@@ -1719,6 +1733,155 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                     }
                     return `Removed ${totalTagsRemoved} tag(s) across ${entriesModified} selected entr${entriesModified === 1 ? "y" : "ies"}.`;
                 },
+                rename: ({ targetTag, replaceValue, global = false }) => {
+                    if (!mainContentAreaElement) {
+                        return "Rename failed: Main content area not found.";
+                    }
+                    if (typeof targetTag !== 'string' || targetTag.trim() === '') {
+                        return "Rename failed: targetTag must be a non-empty string.";
+                    }
+                     if (typeof replaceValue !== 'string' || replaceValue.trim() === '') {
+                        return "Rename failed: replaceValue must be a non-empty string.";
+                    }
+
+                    const targetTagLower = targetTag.trim().toLowerCase();
+                    const replaceValueTrimmed = replaceValue.trim();
+                    const replaceValueLower = replaceValueTrimmed.toLowerCase();
+
+                    let totalEntriesModified = 0;
+                    let totalCategoriesModified = 0;
+                    let totalTagOccurrencesRenamed = 0;
+
+                    // Process Dataset Entries
+                    const entriesToProcess = global
+                        ? Array.from(mainContentAreaElement.querySelectorAll("dataset-entry"))
+                        : opentaggerAPI.getSelectedEntries();
+
+                    for (const entry of entriesToProcess) {
+                        const currentTags = entry.getTags();
+                        let entryModified = false;
+                        const newTags = [];
+                        const newTagsLower = new Set();
+
+                        for (const tag of currentTags) {
+                            const tagLower = tag.toLowerCase();
+                            if (tagLower === targetTagLower) {
+                                // Replace the target tag
+                                if (!newTagsLower.has(replaceValueLower)) {
+                                     newTags.push(replaceValueTrimmed);
+                                     newTagsLower.add(replaceValueLower);
+                                     totalTagOccurrencesRenamed++;
+                                     entryModified = true;
+                                } else {
+                                     // If replaceValue is already present, just drop the targetTag
+                                     totalTagOccurrencesRenamed++; // Still count as an occurrence replaced/removed
+                                     entryModified = true;
+                                }
+                            } else {
+                                // Keep other tags, avoiding duplicates if replaceValue matches an existing tag
+                                if (!newTagsLower.has(tagLower)) {
+                                    newTags.push(tag);
+                                    newTagsLower.add(tagLower);
+                                }
+                            }
+                        }
+
+                        if (entryModified) {
+                            entry.setTags(newTags); // setTags handles internal updates and events
+                            totalEntriesModified++;
+                        }
+                    }
+
+                    // Process Tag Categories if global is true
+                    if (global) {
+                        const categories = document.querySelectorAll("#tag-category-list tag-category");
+                        for (const category of categories) {
+                            const list = category.querySelector("tag-list");
+                            if (!list) continue;
+
+                            const currentTags = list.getTags();
+                            let categoryModified = false;
+                            const newTags = [];
+                            const newTagsLower = new Set();
+
+                             for (const tag of currentTags) {
+                                const tagLower = tag.toLowerCase();
+                                if (tagLower === targetTagLower) {
+                                    // Replace the target tag
+                                    if (!newTagsLower.has(replaceValueLower)) {
+                                         newTags.push(replaceValueTrimmed);
+                                         newTagsLower.add(replaceValueLower);
+                                         totalTagOccurrencesRenamed++; // Count occurrences in categories too
+                                         categoryModified = true;
+                                    } else {
+                                         // If replaceValue is already present, just drop the targetTag
+                                         totalTagOccurrencesRenamed++; // Still count as an occurrence replaced/removed
+                                         categoryModified = true;
+                                    }
+                                } else {
+                                    // Keep other tags, avoiding duplicates
+                                    if (!newTagsLower.has(tagLower)) {
+                                        newTags.push(tag);
+                                        newTagsLower.add(tagLower);
+                                    }
+                                }
+                            }
+
+                            if (categoryModified) {
+                                list.setTagsFromArray(newTags); // Use setTagsFromArray to update the list UI
+                                totalCategoriesModified++;
+                            }
+                        }
+                    }
+
+
+                    const scope = global ? "all entries and categories" : `${entriesToProcess.length} selected entr${entriesToProcess.length === 1 ? "y" : "ies"}`;
+                    let message = `Renamed "${targetTag}" to "${replaceValue}".`;
+                    if (totalEntriesModified > 0) {
+                        message += ` Modified ${totalEntriesModified} entr${totalEntriesModified === 1 ? "y" : "ies"}.`;
+                    }
+                    if (global && totalCategoriesModified > 0) {
+                         message += ` Modified ${totalCategoriesModified} categor${totalCategoriesModified === 1 ? "y" : "ies"}.`;
+                    }
+                    message += ` Total tag occurrences renamed: ${totalTagOccurrencesRenamed}.`;
+
+                    if (totalEntriesModified === 0 && totalCategoriesModified === 0) {
+                         message = `No occurrences of "${targetTag}" found to rename in ${scope}.`;
+                    }
+
+                    return message;
+                },
+                 count: (tagsArray) => {
+                     if (!mainContentAreaElement) {
+                         return "Count failed: Main content area not found.";
+                     }
+                     if (!Array.isArray(tagsArray) || tagsArray.length === 0) {
+                         return "Count failed: No tags provided to count.";
+                     }
+
+                     const requiredTagsLower = tagsArray.map(t => String(t).trim().toLowerCase()).filter(t => t);
+                     if (requiredTagsLower.length === 0) {
+                         return "Count failed: No valid tags provided after processing.";
+                     }
+
+                     const visibleEntries = Array.from(mainContentAreaElement.querySelectorAll('dataset-entry:not([style*="display: none"])'));
+
+                     let matchCount = 0;
+
+                     for (const entry of visibleEntries) {
+                         const entryTagsLower = entry.getNormalizedTags();
+                         const allRequiredTagsPresent = requiredTagsLower.every(requiredTag =>
+                             entryTagsLower.includes(requiredTag)
+                         );
+
+                         if (allRequiredTagsPresent) {
+                             matchCount++;
+                         }
+                     }
+
+                     const tagListString = tagsArray.join(", ");
+                     return `Found ${matchCount} visible entr${matchCount === 1 ? "y" : "ies"} containing all tags: "${tagListString}".`;
+                },
                 help: () => {
                     const apiHelp = `Available opentaggerAPI functions (callable directly in JS console):\n${Object.keys(
                         opentaggerAPI
@@ -1842,6 +2005,7 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                     return "Console cleared.";
                 },
             };
+
 
             function customCodeMirrorHints(editor, options) {
                 const cursor = editor.getCursor();
@@ -2114,7 +2278,7 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                 return cmJsHintResult;
             }
 
-            const slashCommands = {
+                        const slashCommands = {
                 search: {
                     func: (args) => {
                         if (args.length < 2) return "Usage: /search <query>";
@@ -2181,6 +2345,41 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                     signature: "<tag1>, [tag2 with spaces], ...",
                     apiRef: "removeTagsFromSelected",
                 },
+                rename: {
+                    func: (args) => {
+                        let global = false;
+                        const positionalArgs = [];
+                        for(const arg of args.slice(1)) { // Skip command name
+                            if (arg.toLowerCase() === '--global=true') {
+                                global = true;
+                            } else {
+                                positionalArgs.push(arg);
+                            }
+                        }
+
+                        if (positionalArgs.length < 2) {
+                            return "Usage: /rename <targetTag> <replaceValue> [--global=true]";
+                        }
+
+                        const targetTag = positionalArgs[0];
+                        const replaceValue = positionalArgs[1];
+
+                        return opentaggerAPI.rename({ targetTag, replaceValue, global });
+                    },
+                    signature: "<targetTag> <replaceValue> [--global=true]",
+                    apiRef: "rename", // Used for hints, actual call is in func
+                },
+                 count: {
+                     func: (args) => {
+                         if (args.length < 2) return "Usage: /count <tag1>, [tag2], ...";
+                         const rawTagsString = args.slice(1).join(" ");
+                         const tagsArray = parseRawTagInput(rawTagsString);
+                         if (tagsArray.length === 0) return "No valid tags provided.";
+                         return opentaggerAPI.count(tagsArray);
+                     },
+                     signature: "<tag1>, [tag2 with spaces], ...",
+                     apiRef: "count", // Used for hints, actual call is in func
+                 },
                 clear: {
                     func: (args) => {
                         return opentaggerAPI.clear();
@@ -2196,6 +2395,7 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                     apiRef: "help",
                 },
             };
+
 
             function getTagText(element) {
                 const span = element.querySelector("span[contenteditable]");
@@ -3154,6 +3354,9 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                                 this.dispatchEvent(new CustomEvent("tag-updated", { bubbles: true, composed: true }));
                                 this.dispatchEvent(new CustomEvent("tag-list-changed-internally", { bubbles: true, composed: true }));
                             }
+                            console.log("TagList drop effect:", effect);
+                            sfx.sfxPop.volume = 1.0;
+                            sfx.sfxPop.play();
                         }
                     });
                 }
@@ -3245,26 +3448,16 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
 
                     let changed = false;
                     if (Array.isArray(tagsArray)) {
+                        const uniqueTags = new Set();
                         for (const tagText of tagsArray) {
                             if (tagText && typeof tagText === "string") {
-                                const newTag =
-                                    document.createElement("dataset-tag");
-                                newTag.textContent = tagText.trim();
-
-                                let isDuplicate = false;
-                                for (const child of this.children) {
-                                    if (
-                                        child.tagName === "DATASET-TAG" &&
-                                        getTagText(child).toLowerCase() ===
-                                            newTag.textContent.toLowerCase()
-                                    ) {
-                                        isDuplicate = true;
-                                        break;
-                                    }
-                                }
-
-                                if (newTag.textContent && !isDuplicate) {
+                                const trimmedTag = tagText.trim();
+                                if (trimmedTag && !uniqueTags.has(trimmedTag.toLowerCase())) {
+                                    const newTag =
+                                        document.createElement("dataset-tag");
+                                    newTag.textContent = trimmedTag;
                                     this.appendChild(newTag);
+                                    uniqueTags.add(trimmedTag.toLowerCase());
                                     changed = true;
                                 }
                             }
@@ -3448,6 +3641,7 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                         "tag-updated",
                         this._boundCheckAndUpdate
                     );
+
                     this.addEventListener(
                         "tag-list-changed-internally",
                         this._boundCheckAndUpdate
@@ -3671,7 +3865,7 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                 }
                 deleteEntry() {
                     const img = this.querySelector("img");
-                    if (img?.src.startsWith("blob:")) {
+                    if (img?.src.startsWith("blob:") && URL.revokeObjectURL) {
                         URL.revokeObjectURL(img.src);
                     }
                     this.remove();
@@ -3965,7 +4159,7 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                 }
                 setImage(blobUrl, fileObject) {
                     const img = this.querySelector("img");
-                    if (img?.src.startsWith("blob:") && img.src !== blobUrl) {
+                    if (img?.src.startsWith("blob:") && img.src !== blobUrl && URL.revokeObjectURL) {
                         URL.revokeObjectURL(img.src);
                     }
                     this.imageSrc = blobUrl;
@@ -5064,16 +5258,19 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
 
             function processConsoleInput(inputValue) {
                 if (inputValue.startsWith("/")) {
+                    // Simple split by spaces, respecting quotes
                     const parts =
                         inputValue.match(/(?:[^\s"]+|"[^"]*")+/g) || [];
                     if (parts.length === 0) return;
 
                     const commandName = parts[0].substring(1).toLowerCase();
+                     // Remove quotes from args
                     const args = parts.map((p) =>
                         p.startsWith('"') && p.endsWith('"')
                             ? p.slice(1, -1)
                             : p
                     );
+
 
                     const commandObject = slashCommands[commandName];
                     if (
@@ -5086,7 +5283,7 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                                 logToConsole(
                                     result,
                                     "success",
-                                    typeof result === "object"
+                                    typeof result === "object" || (typeof result === "string" && result.includes("\n"))
                                 );
                             }
                         } catch (e) {
@@ -5385,7 +5582,7 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                 } else {
                     console.warn(
                         "Frontend Origin is 'null' or not available (likely file:// URL). Some fetch operations to localhost might be restricted by CORS if backend isn't configured for 'null' origin."
-                    );
+                        );
                 }
 
                 const categoryListContainer =
@@ -6036,11 +6233,16 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                 const menuSave = document.querySelector(
                     'menu-item[data-action="save-project"]'
                 );
-                const originalText = menuSave?.textContent || menuActionText;
+                 const menuExport = document.querySelector(
+                     'menu-item[data-action="export"]'
+                 );
+                 const targetMenuItem = menuSave || menuExport;
+                 const originalText = targetMenuItem?.textContent || menuActionText;
 
-                if (menuSave) {
-                    menuSave.textContent = "Zipping...";
-                    menuSave.style.pointerEvents = "none";
+
+                if (targetMenuItem) {
+                    targetMenuItem.textContent = "Zipping...";
+                    targetMenuItem.style.pointerEvents = "none";
                 } else {
                     showConfirmationModal("Zipping project...", []);
                 }
@@ -6056,7 +6258,7 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                             const progressText = `Zipping... (${metadata.percent.toFixed(
                                 0
                             )}%)`;
-                            if (menuSave) menuSave.textContent = progressText;
+                            if (targetMenuItem) targetMenuItem.textContent = progressText;
                             else {
                                 const modalMsg = document.querySelector(
                                     ".modal-overlay .modal-message"
@@ -6067,28 +6269,26 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                         }
                     );
                     document.querySelector(".modal-overlay")?.remove();
+                    const filename = menuSave ? `lora_project_${Date.now()}${PROJECT_FILE_EXTENSION}` : "lora_dataset_export.zip";
                     saveAs(
                         blob,
-                        `lora_project_${Date.now()}${PROJECT_FILE_EXTENSION}`
+                        filename
                     );
                     console.log("Project saved successfully.");
-                    showConfirmationModal("Project saved successfully!", [
+                    showConfirmationModal(menuSave ? "Project saved successfully!" : "Dataset exported successfully!", [
                         { text: "OK" },
                     ]);
                 } catch (err) {
-                    console.error("Error generating project ZIP:", err);
+                    console.error("Error generating ZIP:", err);
                     document.querySelector(".modal-overlay")?.remove();
                     showConfirmationModal(
-                        "Error generating project file. Check console for details.",
+                        "Error generating file. Check console for details.",
                         [{ text: "OK" }]
                     );
                 } finally {
-                    if (exportMenuItem) { // Check for exportMenuItem here too, as this function is also used by export
-                        exportMenuItem.textContent = originalMenuText;
-                        exportMenuItem.style.pointerEvents = "auto";
-                    } else if (menuSave) {
-                        menuSave.textContent = originalText;
-                        menuSave.style.pointerEvents = "auto";
+                    if (targetMenuItem) {
+                        targetMenuItem.textContent = originalText;
+                        targetMenuItem.style.pointerEvents = "auto";
                     }
                 }
             }
@@ -6278,7 +6478,7 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                             imageLoadErrors.push(
                                 `Error loading ${imageName}: ${err.message}`
                             );
-                            if (typeof blobUrl !== "undefined")
+                            if (typeof blobUrl !== "undefined" && URL.revokeObjectURL)
                                 URL.revokeObjectURL(blobUrl);
                             return null;
                         }
