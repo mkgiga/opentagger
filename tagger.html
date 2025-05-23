@@ -474,6 +474,12 @@
                 background-color: #ffe0e0;
             }
 
+            dataset-entry img,
+            dataset-entry span:not([contenteditable]),
+            dataset-entry button {
+                user-select: none;
+            }
+
             dataset-entry > .entry-content > tag-list > .add-tag-button {
                 display: inline-flex;
                 align-items: center;
@@ -1422,7 +1428,7 @@
                 sampleRate: 44100,
                 latencyHint: "interactive",
             });
-            
+
             for (const key in sfx) {
                 const audio = document.getElementById(key);
                 audio.volume = 0.1;
@@ -1518,7 +1524,7 @@
                         }
                     }
 
-                    sortSelectedEntriesToTop();
+                    // sortSelectedEntriesToTop(); // Removed: Bug fix - selection shouldn't reorder
                     g_lastClickedEntryForShiftSelect =
                         opentaggerAPI.getSelectedEntries().pop() || null;
 
@@ -1552,7 +1558,7 @@
                         deselectionCount++;
                     }
 
-                    sortSelectedEntriesToTop();
+                    // sortSelectedEntriesToTop(); // Removed: Bug fix - selection shouldn't reorder
                     g_lastClickedEntryForShiftSelect = null;
 
                     const message = `Deselected ${deselectionCount} entr${
@@ -1601,7 +1607,7 @@
                         }
                     }
 
-                    sortSelectedEntriesToTop();
+                    // sortSelectedEntriesToTop(); // Removed: Bug fix - selection shouldn't reorder
                      g_lastClickedEntryForShiftSelect = opentaggerAPI.getSelectedEntries().pop() || null;
 
 
@@ -1640,11 +1646,22 @@
                 },
                 removeTagsFromSelected: (tagsArray) => {
                     const selectedEntries = opentaggerAPI.getSelectedEntries();
-                     if (selectedEntries.length === 0) {
+                    if (selectedEntries.length === 0) {
                         return "No entries selected. No tags removed.";
                     }
                     if (!Array.isArray(tagsArray) || tagsArray.length === 0) {
                         return "No tags provided to remove.";
+                    }
+                    if (tagsArray.length === 1 && tagsArray[0] === "*") {
+                        // support wildcard removal but only if no other tags are provided for now
+                        tagsArray = selectedEntries[0].getTags();
+                        for (const entry of selectedEntries) {
+                            entry.setTags([]); // setTags will trigger updates
+                        }
+
+                        return `Removed all tags from ${selectedEntries.length} entr${
+                            selectedEntries.length === 1 ? "y" : "ies"
+                        }.`;
                     }
 
                     const tagsToRemoveLower = tagsArray.map(t => String(t).trim().toLowerCase()).filter(t => t);
@@ -2729,9 +2746,13 @@
                     this.appendChild(this.addTagButtonElement);
                 }
                 _handleAddTagButtonClick(event) {
+                    // Diagnostic log for Bug #3
+                    console.log('[TagList] _handleAddTagButtonClick called. Target:', event.target, 'CurrentTarget:', event.currentTarget, 'isEditingNewTag:', this.isEditingNewTag, 'has addTagButtonElement:', !!this.addTagButtonElement);
                     event.stopPropagation();
-                    if (this.isEditingNewTag || !this.addTagButtonElement)
+                    if (this.isEditingNewTag || !this.addTagButtonElement) {
+                        console.log('[TagList] Returning early from _handleAddTagButtonClick.');
                         return;
+                    }
                     this.isEditingNewTag = true;
                     this.addTagButtonElement.style.display = "none";
                     this.addTagInputElement = document.createElement("span");
@@ -2823,11 +2844,11 @@
 
                     if (shouldProcessTags && rawInputText.trim()) {
                         const finalTagTexts = parseRawTagInput(rawInputText);
-                        let tagsAdded = 0;
+                        // let tagsAdded = 0; // Variable not used
 
                         for (const tagText of finalTagTexts) {
                             if (this.addTag(tagText)) {
-                                tagsAdded++;
+                                // tagsAdded++; // Variable not used
                             }
                         }
                     }
@@ -2880,104 +2901,65 @@
                         }
                     });
                     this.addEventListener("drop", (e) => {
-                        if (
-                            !draggedElement ||
-                            draggedElement.tagName !== "DATASET-TAG"
-                        ) {
-                            return;
-                        }
+                        if (!draggedElement || draggedElement.tagName !== "DATASET-TAG") return;
                         e.preventDefault();
                         e.stopPropagation();
                         this.classList.remove("drag-over");
 
-                        if (
-                            e.target === draggedElement ||
-                            draggedElement.contains(e.target)
-                        )
-                            return;
-                        if (
-                            this.addTagButtonElement &&
-                            (e.target === this.addTagButtonElement ||
-                                this.addTagButtonElement.contains(e.target))
-                        )
-                            return;
-                        if (
-                            this.addTagInputElement &&
-                            (e.target === this.addTagInputElement ||
-                                this.addTagInputElement.contains(e.target))
-                        )
-                            return;
-
                         const tagText = e.dataTransfer.getData("text/plain");
                         if (!tagText) return;
 
-                        const effect = this.determineDropEffect(draggedElement);
-                        const target = this.findDropTarget(
-                            e.clientX,
-                            e.clientY
-                        );
+                        const amInDatasetEntry = !!this.closest("dataset-entry");
+                        const selectedEntries = opentaggerAPI.getSelectedEntries();
+                        const sourceList = draggedElement.closest("tag-list");
+                        const isSourceCategory = !!draggedElement.closest("tag-category");
 
-                        let tagAddedOrMoved = false;
+                        let eventHandledBySelection = false;
 
-                        if (effect === "copy") {
-                            const added = this.addTag(tagText);
-                            if (added) {
-                                const newTag = Array.from(
-                                    this.querySelectorAll("dataset-tag")
-                                ).find((t) => getTagText(t) === tagText);
-                                if (
-                                    newTag &&
-                                    target &&
-                                    target !== this.addTagButtonElement
-                                ) {
-                                    this.insertBefore(newTag, target);
-                                }
-                                tagAddedOrMoved = true;
-                            }
-                        } else if (effect === "move") {
-                            if (draggedElement.parentElement === this) {
-                                if (
-                                    target !== draggedElement.nextElementSibling
-                                ) {
-                                    this.insertBefore(draggedElement, target);
-                                    tagAddedOrMoved = true;
-                                }
-                            } else {
-                                const added = this.addTag(tagText);
-                                if (added) {
-                                    const newTag = Array.from(
-                                        this.querySelectorAll("dataset-tag")
-                                    ).find(
-                                        (t) =>
-                                            getTagText(t).toLowerCase() ===
-                                            tagText.toLowerCase()
-                                    );
-                                    if (
-                                        newTag &&
-                                        target &&
-                                        target !== this.addTagButtonElement
-                                    ) {
-                                        this.insertBefore(newTag, target);
-                                    }
-
-                                    tagAddedOrMoved = true;
+                        // Case 1: Dragging from a category or another entry's list, AND there's a selection, AND this TagList is in an entry.
+                        if (amInDatasetEntry && selectedEntries.length > 0 && (isSourceCategory || (sourceList && sourceList !== this))) {
+                            let anyTagAddedToSelection = false;
+                            for (const entry of selectedEntries) {
+                                if (entry.addTag(tagText)) { // addTag handles duplicates & dispatches its own events
+                                    anyTagAddedToSelection = true;
                                 }
                             }
+                            if (anyTagAddedToSelection) {
+                                // No extra global event needed here, addTag in DatasetEntry handles it.
+                            }
+                            eventHandledBySelection = true; // Mark that the primary action was on the selection.
                         }
 
-                        if (tagAddedOrMoved) {
-                            this.dispatchEvent(
-                                new CustomEvent("tag-updated", {
-                                    bubbles: true,
-                                    composed: true,
-                                })
-                            );
-                            this.dispatchEvent(
-                                new CustomEvent("tag-list-changed-internally", {
-                                    bubbles: true,
-                                    composed: true,
-                                })
-                            );
+                        // Case 2: If not handled by selection logic above, or if it's an internal drag/move, or drop on a category list.
+                        // This will handle reordering within the same list, or adding a copied tag to a single list (selected or not).
+                        if (!eventHandledBySelection || (sourceList === this)) { // If it was a drag within the same list, still perform move/reorder.
+                            const effect = this.determineDropEffect(draggedElement);
+                            const dropTargetUiElement = this.findDropTarget(e.clientX, e.clientY);
+
+                            // Prevent dropping onto the add button or input field itself
+                            if (this.addTagButtonElement && (e.target === this.addTagButtonElement || this.addTagButtonElement.contains(e.target))) return;
+                            if (this.addTagInputElement && (e.target === this.addTagInputElement || this.addTagInputElement.contains(e.target))) return;
+
+                            let actionPerformedLocally = false;
+                            if (effect === "copy") { // From category, or from another entry's list to this one.
+                                if (this.addTag(tagText)) {
+                                    const newTag = Array.from(this.querySelectorAll("dataset-tag")).find(t => getTagText(t) === tagText);
+                                    if (newTag && dropTargetUiElement && (!this.addTagButtonElement || dropTargetUiElement !== this.addTagButtonElement)) {
+                                        this.insertBefore(newTag, dropTargetUiElement);
+                                    }
+                                    actionPerformedLocally = true;
+                                }
+                            } else if (effect === "move") { // Only if sourceList === this (reordering)
+                                if (draggedElement.parentElement === this && dropTargetUiElement !== draggedElement.nextElementSibling) {
+                                    this.insertBefore(draggedElement, dropTargetUiElement);
+                                    actionPerformedLocally = true;
+                                }
+                            }
+
+                            if (actionPerformedLocally && !eventHandledBySelection) { // Dispatch if action was local and not part of selection batch
+                                this.dispatchEvent(new CustomEvent("tag-updated", { bubbles: true, composed: true }));
+                                this.dispatchEvent(new CustomEvent("tag-list-changed-internally", { bubbles: true, composed: true }));
+                            }
                         }
                     });
                 }
@@ -3316,7 +3298,9 @@
                 }
 
                 _handleEntryClick(event) {
-                    // Prevent selection if clicking on an interactive element within the entry
+                    // Diagnostic log for Bug #3
+                    // console.log('[DatasetEntry] _handleEntryClick called. Target:', event.target, 'CurrentTarget:', event.currentTarget);
+
                     const target = event.target;
                     if (
                         target.closest('button') ||
@@ -3326,6 +3310,10 @@
                     ) {
                         return;
                     }
+                    // event.stopPropagation(); // This was potentially problematic, let's test without or ensure it's needed.
+                                            // If removed, clicks on background might propagate further than desired.
+                                            // For now, let's keep it to ensure selection logic is self-contained.
+                                            // The issue with add-tag-button is likely within TagList itself or its state.
                     event.stopPropagation();
 
 
@@ -3341,16 +3329,23 @@
                             const start = Math.min(currentIndex, lastIndex);
                             const end = Math.max(currentIndex, lastIndex);
 
-                            for (const entry of mainContentAreaElement.querySelectorAll('dataset-entry')) {
-                                entry.selected = false;
+                            // For shift-select, typically you don't deselect everything first if Ctrl isn't also pressed.
+                            // However, common UX is to replace selection with the new range.
+                            // Let's ensure only the range is selected.
+                            if (!isCtrlPressed) { // If Ctrl is not pressed, clear previous selection
+                                for (const entry of mainContentAreaElement.querySelectorAll('dataset-entry[selected]')) {
+                                    if (allVisibleEntries.indexOf(entry) < start || allVisibleEntries.indexOf(entry) > end) {
+                                        entry.selected = false;
+                                    }
+                                }
                             }
                             for (let i = start; i <= end; i++) {
                                 if (allVisibleEntries[i]) {
                                    allVisibleEntries[i].selected = true;
                                 }
                             }
-                        } else { // Fallback if one of the entries isn't visible or found
-                             this.selected = true;
+                        } else {
+                             this.selected = true; // Fallback: select current if range fails
                              g_lastClickedEntryForShiftSelect = this;
                         }
                     } else if (isCtrlPressed) {
@@ -3358,19 +3353,21 @@
                         g_lastClickedEntryForShiftSelect = this.selected ? this : null;
                     } else {
                         const wasSelected = this.selected;
+                        // Deselect all others
                         for (const entry of mainContentAreaElement.querySelectorAll('dataset-entry[selected]')) {
                             if (entry !== this) entry.selected = false;
                         }
                         // If it was the only one selected, toggle it. Otherwise, select it.
-                        if (opentaggerAPI.getSelectedEntries().length === 1 && wasSelected) {
-                            this.selected = false;
+                        // Or, more standard: if it wasn't selected, select it. If it was, and it's the only one, deselect. If it was one of many, it becomes the only selection.
+                        if (wasSelected && opentaggerAPI.getSelectedEntries().length === 1 && opentaggerAPI.getSelectedEntries()[0] === this) {
+                             this.selected = false; // Toggle off if it was the sole selected item
                              g_lastClickedEntryForShiftSelect = null;
                         } else {
                             this.selected = true;
                             g_lastClickedEntryForShiftSelect = this;
                         }
                     }
-                    sortSelectedEntriesToTop();
+                    // sortSelectedEntriesToTop(); // Removed: Bug fix - selection shouldn't reorder
                 }
 
                 _handleImageClick(e) {
@@ -4515,45 +4512,8 @@
                 showConfirmationModal(summaryMessage, [{ text: "OK" }]);
             }
 
-            function sortSelectedEntriesToTop() {
-                if (!mainContentAreaElement) return;
-
-                const entries = Array.from(
-                    mainContentAreaElement.querySelectorAll("dataset-entry")
-                );
-
-                if (entries.length === 0) return;
-
-                entries.sort((a, b) => {
-                    const aSelected = a.hasAttribute("selected");
-                    const bSelected = b.hasAttribute("selected");
-                    if (aSelected && !bSelected) return -1;
-                    if (!aSelected && bSelected) return 1;
-
-                    // If selection status is the same, maintain original relative order (approximated by current DOM order)
-                    // This is a bit tricky as querySelectorAll doesn't guarantee order if elements are moved.
-                    // A more robust way would be to store original indices if this becomes an issue.
-                    // For now, this should be mostly fine.
-                    const allEntriesInDom = Array.from(mainContentAreaElement.children);
-                    const aIndex = allEntriesInDom.indexOf(a);
-                    const bIndex = allEntriesInDom.indexOf(b);
-                    return aIndex - bIndex;
-                });
-
-                // Re-append in sorted order
-                for (const entry of entries) {
-                     mainContentAreaElement.appendChild(entry);
-                }
-
-
-                if (
-                    dropHint &&
-                    dropHint.style.display !== "none" &&
-                    dropHint.parentElement === mainContentAreaElement
-                ) {
-                    mainContentAreaElement.appendChild(dropHint);
-                }
-            }
+            // Removed sortSelectedEntriesToTop function as it's no longer needed
+            // and was causing selection behavior issues.
 
             function filterEntries(query) {
                 if (!mainContentAreaElement || !searchInput) {
@@ -4579,7 +4539,7 @@
                     }
                 }
 
-                let hasVisible = false;
+                // let hasVisible = false; // Variable not used
 
                 for (const entry of entries) {
                     const tags = entry.getNormalizedTags();
@@ -4589,7 +4549,7 @@
                     entry.style.display = match ? "" : "none";
 
                     if (match) {
-                        hasVisible = true;
+                        // hasVisible = true; // Variable not used
                         if (g_parsedSearchTerms.length > 0) {
                             entry.applyTagHighlighting(
                                 g_parsedSearchTerms,
@@ -5413,7 +5373,7 @@
                                 opentaggerAPI.deselectAllEntries(true);
                                 entry.selected = true;
                                 g_lastClickedEntryForShiftSelect = entry;
-                                sortSelectedEntriesToTop();
+                                // sortSelectedEntriesToTop(); // Removed
                             }
 
 
@@ -5597,7 +5557,7 @@
                     );
                     const items = [];
                     const selectedEntries = opentaggerAPI.getSelectedEntries();
-                    const targetEntries = selectedEntries.length > 0 ? selectedEntries : [rightClickedEntry];
+                    const targetEntries = selectedEntries.length > 0 && selectedEntries.includes(rightClickedEntry) ? selectedEntries : [rightClickedEntry];
 
 
                     for (const cat of cats) {
@@ -5607,10 +5567,12 @@
                             items.push({
                                 label: `Add All from "${name}" to ${targetEntries.length} entr${targetEntries.length === 1 ? 'y' : 'ies'}`,
                                 callback: () => {
-                                    let changed = false;
+                                    // let changed = false; // Variable not used
                                     for(const entry of targetEntries) {
                                         for (const tag of tags) {
-                                            if (entry.addTag(tag)) changed = true;
+                                            if (entry.addTag(tag)) {
+                                                // changed = true; // Variable not used
+                                            }
                                         }
                                     }
                                 },
