@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
     <head>
@@ -317,12 +318,12 @@ text-align: left;
                 padding-bottom: 5px;
             }
 
-            #tag-category-list {
+            #tag-group-list {
                 flex-grow: 1;
                 margin-bottom: 10px;
             }
 
-            #btn-add-category {
+            #btn-add-group {
                 padding: 8px;
                 background-color: #5c85d6;
                 color: white;
@@ -331,7 +332,7 @@ text-align: left;
                 cursor: pointer;
                 margin-top: auto;
             }
-            #btn-add-category:hover {
+            #btn-add-group:hover {
                 background-color: #4a6aaa;
             }
 
@@ -448,6 +449,7 @@ text-align: left;
                 user-select: none;
                 transition: background-color 0.2s ease;
                 min-width: 50px;
+                position: relative; /* For autocomplete positioning context */
             }
 
             dataset-tag:active {
@@ -691,7 +693,7 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                 background: #fff;
                 border: 1px solid #ddd;
                 box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
-                z-index: 101;
+                z-index: 101; /* Ensure it's above CodeMirror itself */
                 max-height: 10em;
                 overflow-y: auto;
             }
@@ -703,6 +705,59 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                 background: #e7f0ff;
                 color: #005cbb;
             }
+
+            autocomplete-dropdown {
+                position: absolute;
+                background-color: #fff;
+                border: 1px solid #ccc;
+                box-shadow: 1px 1px 4px rgba(0, 0, 0, 0.15);
+                padding: 3px 0;
+                min-width: 150px; 
+                z-index: 2500; 
+                display: none; 
+                flex-direction: column;
+                max-height: 200px; 
+                overflow-y: auto;
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+                font-size: 0.9em;
+            }
+
+            autocomplete-dropdown.visible {
+                display: flex;
+            }
+
+            autocomplete-dropdown div.suggestion-item {
+                padding: 5px 10px;
+                cursor: pointer;
+                white-space: nowrap;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+
+            autocomplete-dropdown div.suggestion-item:hover,
+            autocomplete-dropdown div.suggestion-item.selected {
+                background-color: #e7f0ff; 
+                color: #005cbb; 
+            }
+            autocomplete-dropdown div.suggestion-item.selected .tag-count {
+                 color: #005cbb; /* Match text color */
+            }
+
+
+            autocomplete-dropdown div.suggestion-item .tag-name {
+                font-weight: normal; /* Default, can be overridden */
+            }
+            autocomplete-dropdown div.suggestion-item.selected .tag-name {
+                font-weight: bold;
+            }
+
+            autocomplete-dropdown div.suggestion-item .tag-count {
+                font-size: 0.85em;
+                color: #777;
+                margin-left: 8px;
+            }
+
 
             dataset-entry.requirement-not-met::after {
                 content: "warning";
@@ -833,7 +888,7 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                 }
             }
 
-            tag-category {
+            tag-group {
                 display: block;
                 margin-bottom: 15px;
                 border: 1px solid #e0e0e0;
@@ -843,7 +898,7 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                 position: relative;
             }
 
-            tag-category .category-header {
+            tag-group .group-header {
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
@@ -852,7 +907,7 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                 gap: 5px;
             }
 
-            tag-category .category-name {
+            tag-group .group-name {
                 font-weight: bold;
                 color: #666;
                 padding: 3px 5px;
@@ -863,15 +918,15 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                 min-width: 50px;
                 margin-right: 5px;
             }
-            tag-category .category-name:hover {
+            tag-group .group-name:hover {
                 background-color: #f0f0f0;
             }
-            tag-category .category-name:focus {
+            tag-group .group-name:focus {
                 background-color: #e7f0ff;
                 box-shadow: 0 0 0 1px #b3d1ff;
             }
 
-            tag-category .min-tags-control {
+            tag-group .min-tags-control {
                 display: flex;
                 align-items: center;
                 gap: 3px;
@@ -880,7 +935,7 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                 margin-left: auto;
                 flex-shrink: 0;
             }
-            tag-category .min-tags-control button {
+            tag-group .min-tags-control button {
                 font-family: "Material Icons";
                 font-size: 18px;
                 cursor: pointer;
@@ -896,17 +951,17 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                 justify-content: center;
                 border-radius: 3px;
             }
-            tag-category .min-tags-control button:hover {
+            tag-group .min-tags-control button:hover {
                 background-color: #eee;
                 color: #333;
             }
-            tag-category .min-tags-value {
+            tag-group .min-tags-value {
                 min-width: 15px;
                 text-align: center;
                 font-weight: bold;
             }
 
-            tag-category .btn-new-tag {
+            tag-group .btn-new-tag {
                 font-family: "Material Icons";
                 font-size: 20px;
                 cursor: pointer;
@@ -918,12 +973,12 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                 flex-shrink: 0;
             }
 
-            tag-category .btn-new-tag:hover {
+            tag-group .btn-new-tag:hover {
                 background-color: #e7f0ff;
                 color: #4a6aaa;
             }
 
-            tag-category tag-list {
+            tag-group tag-list {
                 min-height: 40px;
                 padding-bottom: 10px;
                 position: relative;
@@ -1303,24 +1358,24 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
 
         <div id="app">
             <aside class="sidebar">
-                <h2>Tag Categories</h2>
-                <div id="tag-category-list">
-                    <tag-category category-name="General">
+                <h2>Tag Groups</h2>
+                <div id="tag-group-list">
+                    <tag-group group-name="General">
                         <dataset-tag>1girl</dataset-tag>
                         <dataset-tag>1boy</dataset-tag>
                         <dataset-tag>solo</dataset-tag>
                         <dataset-tag>multiple boys</dataset-tag>
                         <dataset-tag>multiple girls</dataset-tag>
-                    </tag-category>
-                    <tag-category category-name="Angle">
+                    </tag-group>
+                    <tag-group group-name="Angle">
                         <dataset-tag>from below</dataset-tag>
                         <dataset-tag>from above</dataset-tag>
                         <dataset-tag>from behind</dataset-tag>
                         <dataset-tag>from side</dataset-tag>
                         <dataset-tag>straight-on</dataset-tag>
                         <dataset-tag>three quarter view</dataset-tag>
-                    </tag-category>
-                    <tag-category category-name="Composition">
+                    </tag-group>
+                    <tag-group group-name="Composition">
                         <dataset-tag>close-up</dataset-tag>
                         <dataset-tag>portrait</dataset-tag>
                         <dataset-tag>upper body</dataset-tag>
@@ -1328,15 +1383,15 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                         <dataset-tag>full body</dataset-tag>
                         <dataset-tag>wide shot</dataset-tag>
                         <dataset-tag>very wide shot</dataset-tag>
-                    </tag-category>
-                    <tag-category category-name="Background">
+                    </tag-group>
+                    <tag-group group-name="Background">
                         <dataset-tag>simple background</dataset-tag>
                         <dataset-tag>indoors</dataset-tag>
                         <dataset-tag>outdoors</dataset-tag>
                         <dataset-tag>city</dataset-tag>
                         <dataset-tag>nature</dataset-tag>
-                    </tag-category>
-                    <tag-category category-name="Style">
+                    </tag-group>
+                    <tag-group group-name="Style">
                         <dataset-tag>anime coloring</dataset-tag>
                         <dataset-tag>realistic</dataset-tag>
                         <dataset-tag>sketch</dataset-tag>
@@ -1344,9 +1399,9 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                         <dataset-tag>lineart</dataset-tag>
                         <dataset-tag>comic</dataset-tag>
                         <dataset-tag>furry</dataset-tag>
-                    </tag-category>
+                    </tag-group>
                 </div>
-                <button id="btn-add-category">Add Category</button>
+                <button id="btn-add-group">Add Group</button>
             </aside>
 
             <main class="main-view" id="main-view">
@@ -1392,6 +1447,9 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
             accept=".zip"
             style="display: none"
         />
+        
+        <autocomplete-dropdown id="tag-autocomplete-dropdown" translate="no"></autocomplete-dropdown>
+
 
         <!-- todo: bundle these with a build tool like webpack or something -->
         <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
@@ -1418,11 +1476,12 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
             const AUTOTAG_API_URL = "http://localhost:8081/autotag/";
             const HEALTH_CHECK_URL = "http://localhost:8081/health";
 
-            let g_parsedSearchTerms = [];
-            let g_searchTermColors = {};
-            // g_lastClickedEntryForShiftSelect now stores the entry that was the *anchor* for the last selection operation (simple click or ctrl+click)
-            let g_lastClickedEntryForShiftSelect = null;
+            let globalParsedSearchTerms = [];
+            let globalSearchTermColors = {};
+            // now stores the entry that was the *anchor* for the last selection operation (simple click or ctrl+click)
+            let globalLastClickedEntryForShiftSelect = null;
 
+            // TODO: this should probably be its own web component
             let devConsoleElement = null;
             let consoleOutputElement = null;
             const CONSOLE_MAX_HEIGHT_PERCENT = 40;
@@ -1432,6 +1491,56 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
             let consoleHistoryIndex = -1;
             let currentConsoleInputBuffer = "";
             let hasShownConsoleWelcomeMessage = false;
+
+            // User config defaults,
+            // load from localStorage later and dynamically generate a UI from these later using their default values to infer types
+            const preferences = {
+                // an object means it's a section with sub-options
+                // this can nest indefinitely, but the outermost key exists as a toggle to render all of its ancestors resulting UI.
+                // if any other outer category's button is toggled, it will be hidden and that category's UI will become visible instead.
+                importingImages: {
+                    minimumHeight: 768,
+                    minimumWidth: 768,
+                    maximumHeight: 4096,
+                    maximumWidth: 4096,
+                    minimumPixelsSum: -1, // -1 means no limit
+                    maximumPixelsSum: -1,
+                },
+                tagging: {
+                    tagAutoComplete: {
+                        enabled: true,
+                        maxSuggestions: 10, // Maximum number of suggestions to show
+                        csvFile: {
+                            // any object that has a '@type' property means the option is a special type rendered differently
+                            // in this case, a <select> element with <option>s
+                            "@type": "select",
+                            "value": "danbooru_e621_merged.csv",
+                            "options": [
+                                "e621.csv",
+                                "danbooru.csv",    
+                                "danbooru_e621_merged.csv"
+                            ]
+                        }
+                    }
+                },
+                autotagging: {
+                    enabled: true,
+                    endpoint: AUTOTAG_API_URL,
+                    batchSize: 5, // Number of images to process in a single request
+                    timeout: 30000, // 30 seconds
+                    autotaggingModel: {
+                        "@type": "select",
+                        "value": "wd-vit-tagger-v3",
+                        "options": [
+                            "wd-vit-tagger-v3",
+                            "wd-vit-tagger-v2",
+                            "wd-vit-tagger-v1"
+                        ]
+                    }
+                }
+
+            }
+
 
             /**
              * @type {{ [id: string]: HTMLAudioElement }}
@@ -1456,6 +1565,81 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                 audio.volume = 0.1;
                 sfx[key] = audio;
             };
+
+            // Autocomplete for Booru Tags
+            let booruTags = [];
+            let booruTagsLoadingPromise = null;
+            const MAX_SUGGESTIONS = 10;
+            let globalTagAutocompleteDropdown = null;
+
+
+            async function loadBooruTags() {
+                if (booruTags.length > 0) return booruTags;
+                if (booruTagsLoadingPromise) return booruTagsLoadingPromise;
+
+                console.log("Initiating booru tag loading...");
+                booruTagsLoadingPromise = fetch('/assets/csv/danbooru_e621_merged.csv')
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status} while fetching tags.`);
+                        }
+                        return response.text();
+                    })
+                    .then(csvText => {
+                        const lines = csvText.split('\n');
+                        const loadedTags = [];
+                        // Assuming the first line is a header: "tag_name,type_n,image_count,aliases"
+                        for (let i = 1; i < lines.length; i++) {
+                            const line = lines[i].trim();
+                            if (!line) continue;
+
+                            const parts = [];
+                            let currentPart = '';
+                            let inQuotes = false;
+                            for (const char of line) {
+                                if (char === ',' && !inQuotes) {
+                                    parts.push(currentPart);
+                                    currentPart = '';
+                                } else if (char === '"') {
+                                    inQuotes = !inQuotes;
+                                    // Don't add quotes to the part itself for aliases,
+                                    // but respect them for parsing
+                                } else {
+                                    currentPart += char;
+                                }
+                            }
+                            parts.push(currentPart);
+
+                            if (parts.length >= 3) {
+                                const tagName = parts[0].trim();
+                                const typeN = parseInt(parts[1], 10);
+                                const imageCount = parseInt(parts[2], 10);
+                                // const aliases = parts[3] ? parts[3].trim() : ''; // Aliases raw string
+
+                                if (tagName && !isNaN(typeN) && !isNaN(imageCount)) {
+                                    loadedTags.push({
+                                        name: tagName,
+                                        type: typeN,
+                                        count: imageCount,
+                                    });
+                                }
+                            }
+                        }
+                        booruTags = loadedTags;
+                        // Sort once after loading, by count descending for general use
+                        booruTags.sort((a, b) => b.count - a.count);
+                        console.log(`Loaded and sorted ${booruTags.length} booru tags.`);
+                        return booruTags;
+                    })
+                    .catch(error => {
+                        console.error("Failed to load or parse booru tags:", error);
+                        booruTagsLoadingPromise = null;
+                        booruTags = [];
+                        return [];
+                    });
+                return booruTagsLoadingPromise;
+            }
+
 
             async function checkBackendReady(maxRetries = 30, delay = 1000) {
                 console.log(
@@ -1554,9 +1738,9 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                     // Update g_lastClickedEntryForShiftSelect if only one entry is selected after the operation
                     const currentlySelected = opentaggerAPI.getSelectedEntries();
                     if (currentlySelected.length === 1) {
-                         g_lastClickedEntryForShiftSelect = currentlySelected[0];
+                         globalLastClickedEntryForShiftSelect = currentlySelected[0];
                     } else {
-                         g_lastClickedEntryForShiftSelect = null;
+                         globalLastClickedEntryForShiftSelect = null;
                     }
 
 
@@ -1589,7 +1773,7 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                         deselectionCount++;
                     }
 
-                    g_lastClickedEntryForShiftSelect = null;
+                    globalLastClickedEntryForShiftSelect = null;
 
                     const message = `Deselected ${deselectionCount} entr${
                         deselectionCount === 1 ? "y" : "ies"
@@ -1640,10 +1824,10 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                     // Update g_lastClickedEntryForShiftSelect if only one entry remains selected
                     const currentlySelected = opentaggerAPI.getSelectedEntries();
                     if (currentlySelected.length === 1) {
-                         g_lastClickedEntryForShiftSelect = currentlySelected[0];
-                    } else if (deselectedCount > 0 && g_lastClickedEntryForShiftSelect && !g_lastClickedEntryForShiftSelect.selected) {
+                         globalLastClickedEntryForShiftSelect = currentlySelected[0];
+                    } else if (deselectedCount > 0 && globalLastClickedEntryForShiftSelect && !globalLastClickedEntryForShiftSelect.selected) {
                          // If the last clicked entry was deselected by the filter, clear it
-                         g_lastClickedEntryForShiftSelect = null;
+                         globalLastClickedEntryForShiftSelect = null;
                     }
 
 
@@ -1749,7 +1933,7 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                     const replaceValueLower = replaceValueTrimmed.toLowerCase();
 
                     let totalEntriesModified = 0;
-                    let totalCategoriesModified = 0;
+                    let totalGroupsModified = 0;
                     let totalTagOccurrencesRenamed = 0;
 
                     // Process Dataset Entries
@@ -1792,15 +1976,15 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                         }
                     }
 
-                    // Process Tag Categories if global is true
+                    // Process Tag Groups if global is true
                     if (global) {
-                        const categories = document.querySelectorAll("#tag-category-list tag-category");
-                        for (const category of categories) {
-                            const list = category.querySelector("tag-list");
+                        const groups = document.querySelectorAll("#tag-group-list tag-group");
+                        for (const group of groups) {
+                            const list = group.querySelector("tag-list");
                             if (!list) continue;
 
                             const currentTags = list.getTags();
-                            let categoryModified = false;
+                            let groupModified = false;
                             const newTags = [];
                             const newTagsLower = new Set();
 
@@ -1811,12 +1995,12 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                                     if (!newTagsLower.has(replaceValueLower)) {
                                          newTags.push(replaceValueTrimmed);
                                          newTagsLower.add(replaceValueLower);
-                                         totalTagOccurrencesRenamed++; // Count occurrences in categories too
-                                         categoryModified = true;
+                                         totalTagOccurrencesRenamed++; // Count occurrences in groups too
+                                         groupModified = true;
                                     } else {
                                          // If replaceValue is already present, just drop the targetTag
                                          totalTagOccurrencesRenamed++; // Still count as an occurrence replaced/removed
-                                         categoryModified = true;
+                                         groupModified = true;
                                     }
                                 } else {
                                     // Keep other tags, avoiding duplicates
@@ -1827,25 +2011,25 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                                 }
                             }
 
-                            if (categoryModified) {
+                            if (groupModified) {
                                 list.setTagsFromArray(newTags); // Use setTagsFromArray to update the list UI
-                                totalCategoriesModified++;
+                                totalGroupsModified++;
                             }
                         }
                     }
 
 
-                    const scope = global ? "all entries and categories" : `${entriesToProcess.length} selected entr${entriesToProcess.length === 1 ? "y" : "ies"}`;
+                    const scope = global ? "all entries and groups" : `${entriesToProcess.length} selected entr${entriesToProcess.length === 1 ? "y" : "ies"}`;
                     let message = `Renamed "${targetTag}" to "${replaceValue}".`;
                     if (totalEntriesModified > 0) {
                         message += ` Modified ${totalEntriesModified} entr${totalEntriesModified === 1 ? "y" : "ies"}.`;
                     }
-                    if (global && totalCategoriesModified > 0) {
-                         message += ` Modified ${totalCategoriesModified} categor${totalCategoriesModified === 1 ? "y" : "ies"}.`;
+                    if (global && totalGroupsModified > 0) {
+                         message += ` Modified ${totalGroupsModified} group${totalGroupsModified === 1 ? "" : "s"}.`;
                     }
                     message += ` Total tag occurrences renamed: ${totalTagOccurrencesRenamed}.`;
 
-                    if (totalEntriesModified === 0 && totalCategoriesModified === 0) {
+                    if (totalEntriesModified === 0 && totalGroupsModified === 0) {
                          message = `No occurrences of "${targetTag}" found to rename in ${scope}.`;
                     }
 
@@ -2647,30 +2831,27 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
             }
 
              /**
-             * Generates submenu items for adding category tags to selected entries.
+             * Generates submenu items for adding group tags to selected entries.
              * @param {Array<DatasetEntry>} targetEntries - The array of entries the action will apply to.
              * @returns {Array<Object>} Menu item definitions.
              */
-            function getCategorySubmenuItems(targetEntries) {
+            function getGroupSubmenuItems(targetEntries) {
                 const cats = document.querySelectorAll(
-                    "#tag-category-list tag-category"
+                    "#tag-group-list tag-group"
                 );
                 const items = [];
                 const targetCount = targetEntries.length;
 
                 for (const cat of cats) {
-                    const name = cat.getAttribute("category-name") || "...";
-                    const tags = cat.getCategoryTags();
+                    const name = cat.getAttribute("group-name") || "...";
+                    const tags = cat.getGroupTags();
                     if (tags.length > 0)
                         items.push({
                             label: `Add All from "${name}"`,
                             callback: () => {
-                                // let changed = false; // Variable not used
                                 for(const entry of targetEntries) {
                                     for (const tag of tags) {
-                                        if (entry.addTag(tag)) {
-                                            // changed = true; // Variable not used
-                                        }
+                                        entry.addTag(tag);
                                     }
                                 }
                             },
@@ -2678,13 +2859,261 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                 }
                 if (items.length === 0)
                     items.push({
-                        label: "(No categories with tags)",
+                        label: "(No groups with tags)",
                         callback: null,
                         disabled: true,
                     });
                 return items;
             }
 
+            class AutocompleteDropdown extends HTMLElement {
+                constructor() {
+                    super();
+                    this._targetElement = null;
+                    this._suggestions = [];
+                    this._selectedIndex = -1;
+                    this._boundHandleDocumentClick = this._handleDocumentClick.bind(this);
+                    this._boundHandleKeyDownPassthrough = this._handleKeyDownPassthrough.bind(this);
+                }
+            
+                show(suggestions, targetElement) {
+                    this._targetElement = targetElement;
+                    this._suggestions = suggestions;
+                    this._selectedIndex = -1;
+                    this.innerHTML = ''; 
+            
+                    if (!this._targetElement || !this._suggestions || this._suggestions.length === 0) {
+                        this.hide();
+                        return;
+                    }
+            
+                    this._suggestions.forEach((suggestion, index) => {
+                        const item = document.createElement('div');
+                        item.classList.add('suggestion-item');
+                        item.dataset.index = index;
+            
+                        const nameSpan = document.createElement('span');
+                        nameSpan.classList.add('tag-name');
+                        nameSpan.textContent = suggestion.name;
+                        item.appendChild(nameSpan);
+            
+                        const countSpan = document.createElement('span');
+                        countSpan.classList.add('tag-count');
+                        countSpan.textContent = `(${suggestion.count.toLocaleString()})`;
+                        item.appendChild(countSpan);
+            
+                        item.addEventListener('mousedown', (e) => {
+                            e.preventDefault(); 
+                            this._selectItem(index);
+                        });
+                        this.appendChild(item);
+                    });
+            
+                    // --- Positioning Logic ---
+                    const currentTargetRect = this._targetElement.getBoundingClientRect();
+                    const dropdown = this;
+            
+                    // Set minWidth based on target before measuring dropdown.
+                    // The dropdown has `box-sizing: border-box` due to global `*` rule.
+                    dropdown.style.minWidth = `${currentTargetRect.width}px`;
+            
+                    // Temporarily make it visible for measurement, but out of sight.
+                    dropdown.style.visibility = 'hidden';
+                    dropdown.style.position = 'absolute'; // Ensure it's absolute for correct measurement context
+                    dropdown.style.display = 'flex';     // Apply styles that affect size (from .visible class)
+                    dropdown.style.left = '-9999px';     // Move off-screen
+                    dropdown.style.top = '-9999px';
+            
+                    // Get actual dimensions of the dropdown
+                    const dropdownMeasuredRect = dropdown.getBoundingClientRect();
+                    const dropdownWidth = dropdownMeasuredRect.width;
+                    const dropdownHeight = dropdownMeasuredRect.height;
+            
+                    const viewportWidth = window.innerWidth;
+                    const viewportHeight = window.innerHeight;
+                    const margin = 5; // Small margin from viewport edges
+                    const verticalOffset = 2; // Small offset from the target element
+            
+                    let finalTopViewportRelative, finalLeftViewportRelative;
+            
+                    // Determine vertical position
+                    // Candidate 1: Below target (preferred)
+                    let topIfBelow = currentTargetRect.bottom + verticalOffset;
+                    let fitsBelow = (topIfBelow + dropdownHeight + margin <= viewportHeight);
+            
+                    // Candidate 2: Above target
+                    let topIfAbove = currentTargetRect.top - dropdownHeight - verticalOffset;
+                    let fitsAbove = (topIfAbove >= margin); // Check against top margin
+            
+                    if (fitsBelow) {
+                        finalTopViewportRelative = topIfBelow;
+                    } else if (fitsAbove) {
+                        finalTopViewportRelative = topIfAbove;
+                    } else {
+                        // Neither fits perfectly. Choose based on which has more space or is less clipped.
+                        // If target is more in top half of screen, prefer showing below (even if clamped).
+                        // If target is more in bottom half, prefer showing above (even if clamped).
+                        if (currentTargetRect.top < (viewportHeight / 2)) {
+                            finalTopViewportRelative = topIfBelow;
+                        } else {
+                            finalTopViewportRelative = topIfAbove;
+                        }
+                        // Alternative for when neither fits: check which would be less clipped.
+                        // const overflowBelowAmount = Math.max(0, (topIfBelow + dropdownHeight + margin) - viewportHeight);
+                        // const overflowAboveAmount = Math.max(0, margin - topIfAbove);
+                        // if (overflowBelowAmount <= overflowAboveAmount) {
+                        //    finalTopViewportRelative = topIfBelow;
+                        // } else {
+                        //    finalTopViewportRelative = topIfAbove;
+                        // }
+                    }
+            
+                    // Determine horizontal position
+                    finalLeftViewportRelative = currentTargetRect.left; // Default: align left edges
+                    if (finalLeftViewportRelative + dropdownWidth + margin > viewportWidth) {
+                        // Overflowing right, try aligning to target's right edge
+                        finalLeftViewportRelative = currentTargetRect.right - dropdownWidth;
+                        // If aligning to target's right still makes it overflow left (e.g. target wider than dropdown and near left edge)
+                        // or if dropdown is wider than target and aligning target's right pushes it left:
+                        if (finalLeftViewportRelative < margin) { 
+                           finalLeftViewportRelative = viewportWidth - dropdownWidth - margin; // Align to viewport's right edge
+                        }
+                    }
+                    // Ensure it doesn't overflow left edge of viewport
+                    if (finalLeftViewportRelative < margin) {
+                        finalLeftViewportRelative = margin;
+                    }
+            
+                    // Final clamping to ensure it's strictly within viewport boundaries (accounts for extreme cases)
+                    finalTopViewportRelative = Math.max(margin, Math.min(finalTopViewportRelative, viewportHeight - dropdownHeight - margin));
+                    finalLeftViewportRelative = Math.max(margin, Math.min(finalLeftViewportRelative, viewportWidth - dropdownWidth - margin));
+            
+                    // Convert viewport-relative coordinates to document-relative for absolute positioning
+                    // (since the dropdown is a child of body or similarly high-level container)
+                    dropdown.style.top = `${finalTopViewportRelative + window.scrollY}px`;
+                    dropdown.style.left = `${finalLeftViewportRelative + window.scrollX}px`;
+                    
+                    // minWidth was already set for measurement. If CSS has a stronger min-width (e.g., 150px),
+                    // dropdownWidth would have reflected that.
+                    // If you want to ensure it's NOT NARROWER than the target, the previous style.minWidth handles it.
+                    // If you want it not wider than target (unless content dictates), that's harder.
+                    // Current logic: it's at least target.width, or its own content width, or css min-width, whichever is largest.
+
+                    // Make it truly visible at the calculated position
+                    dropdown.style.visibility = 'visible';
+                    dropdown.classList.add('visible'); // This also ensures display:flex
+            
+                    // --- End Positioning Logic ---
+            
+                    setTimeout(() => {
+                        document.addEventListener('click', this._boundHandleDocumentClick, true);
+                    }, 0);
+            
+                    if (this._targetElement && typeof this._targetElement.addEventListener === 'function') {
+                        this._targetElement.addEventListener('keydown', this._boundHandleKeyDownPassthrough, true);
+                    }
+            
+                    if (this._suggestions.length > 0 && this._selectedIndex === -1) { // Select first item if none selected
+                        this._selectedIndex = 0;
+                        this._updateSelectionVisuals();
+                    }
+                }
+            
+                hide() {
+                    if (!this.classList.contains('visible')) return;
+            
+                    this.classList.remove('visible');
+                    this.style.visibility = 'hidden'; // Ensure it's hidden
+                    this.style.display = 'none'; // And not taking up space
+
+                    document.removeEventListener('click', this._boundHandleDocumentClick, true);
+            
+                    if (this._targetElement && typeof this._targetElement.removeEventListener === 'function') {
+                        this._targetElement.removeEventListener('keydown', this._boundHandleKeyDownPassthrough, true);
+                    }
+                    // Don't nullify _targetElement here if hide can be called temporarily during complex interactions.
+                    // However, for a typical hide, it's fine. If a new `show` call happens, _targetElement gets reset.
+                    // this._targetElement = null; 
+                    this.dispatchEvent(new CustomEvent('dropdown-hidden'));
+                }
+            
+                _handleDocumentClick(event) {
+                    if (!this.contains(event.target) && event.target !== this._targetElement) {
+                        this.hide();
+                    }
+                }
+            
+                _handleKeyDownPassthrough(event) {
+                    if (!this.classList.contains('visible')) return;
+            
+                    switch (event.key) {
+                        case 'ArrowUp':
+                            event.preventDefault();
+                            event.stopPropagation();
+                            this._navigate(-1);
+                            break;
+                        case 'ArrowDown':
+                            event.preventDefault();
+                            event.stopPropagation();
+                            this._navigate(1);
+                            break;
+                        case 'Enter':
+                        case 'Tab': 
+                            if (this._selectedIndex !== -1) {
+                                event.preventDefault();
+                                event.stopPropagation();
+                                this._selectItem(this._selectedIndex);
+                            } else {
+                                // If no item is selected but dropdown is open, Enter/Tab might mean "accept current input text"
+                                // This is handled by the input's blur/keydown. Here, just hide.
+                                this.hide();
+                            }
+                            break;
+                        case 'Escape':
+                            event.preventDefault();
+                            event.stopPropagation();
+                            this.hide();
+                            // Dispatch an event so the DatasetTag can know Escape was pressed while dropdown was open
+                            this.dispatchEvent(new CustomEvent('dropdown-escaped', {bubbles: true, composed: true}));
+                            break;
+                    }
+                }
+            
+                _navigate(direction) {
+                    if (this._suggestions.length === 0) return;
+                    const newIndex = this._selectedIndex + direction;
+                    if (newIndex >= 0 && newIndex < this._suggestions.length) {
+                        this._selectedIndex = newIndex;
+                    } else if (newIndex < 0) { // Wrap around to last item or stay at first
+                        this._selectedIndex = this._suggestions.length -1; // Or 0 to not wrap
+                    } else if (newIndex >= this._suggestions.length) { // Wrap around to first item or stay at last
+                         this._selectedIndex = 0; // Or this._suggestions.length - 1 to not wrap
+                    }
+                    this._updateSelectionVisuals();
+                }
+            
+                _updateSelectionVisuals() {
+                    this.querySelectorAll('.suggestion-item').forEach((item, idx) => {
+                        if (idx === this._selectedIndex) {
+                            item.classList.add('selected');
+                            // Ensure the selected item is visible within the scrollable dropdown
+                            item.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+                        } else {
+                            item.classList.remove('selected');
+                        }
+                    });
+                }
+            
+                _selectItem(index) {
+                    if (index >= 0 && index < this._suggestions.length) {
+                        const selectedSuggestion = this._suggestions[index];
+                        // Let the DatasetTag (or other listener) handle the selected suggestion
+                        this.dispatchEvent(new CustomEvent('suggestion-selected', { detail: selectedSuggestion }));
+                        this.hide(); 
+                    }
+                }
+            }
+            customElements.define('autocomplete-dropdown', AutocompleteDropdown);
 
             class DatasetTag extends HTMLElement {
                 constructor() {
@@ -2703,6 +3132,12 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                     this._boundHandleDragEnd = this._handleDragEnd.bind(this);
                     this._boundHandleContextMenu = this._handleContextMenu.bind(this);
                     this._originalText = "";
+
+                    // For autocomplete
+                    this._boundHandleAutocompleteSelection = this._handleAutocompleteSelection.bind(this);
+                    this._boundHandleAutocompleteEscape = this._handleAutocompleteEscape.bind(this);
+                    this._boundHandleSpanInput = this._handleSpanInput.bind(this);
+                    this._debouncedHandleSpanInput = debounce(this._boundHandleSpanInput, 200); // Debounce input for suggestions
                 }
                 connectedCallback() {
                     let initialText = "";
@@ -2719,17 +3154,22 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                     this.draggable = true;
                     const span = document.createElement("span");
                     span.setAttribute("contenteditable", "false");
+                    span.setAttribute("translate", "no");
                     span.textContent = this._originalText;
                     const button = document.createElement("button");
                     button.classList.add("delete-tag", "material-icons");
                     button.speaker = "Delete Tag";
                     button.textContent = "close";
+
                     this.appendChild(span);
                     this.appendChild(button);
                     this.addEventListeners();
                 }
                 disconnectedCallback() {
                     this.removeEventListeners();
+                     if (globalTagAutocompleteDropdown && globalTagAutocompleteDropdown.classList.contains('visible') && globalTagAutocompleteDropdown._targetElement === this.querySelector('span')) {
+                        globalTagAutocompleteDropdown.hide();
+                    }
                 }
                 addEventListeners() {
                     const d = this.querySelector(".delete-tag");
@@ -2754,6 +3194,7 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                             this._boundHandleSpanKeyDown
                         );
                         s.addEventListener("blur", this._boundHandleSpanBlur);
+                        s.addEventListener('input', this._debouncedHandleSpanInput); // Use debounced handler
                     }
                     this.addEventListener(
                         "dragstart",
@@ -2761,6 +3202,11 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                     );
                     this.addEventListener("dragend", this._boundHandleDragEnd);
                     this.addEventListener("contextmenu", this._boundHandleContextMenu);
+
+                    if (globalTagAutocompleteDropdown) {
+                        globalTagAutocompleteDropdown.addEventListener('suggestion-selected', this._boundHandleAutocompleteSelection);
+                        globalTagAutocompleteDropdown.addEventListener('dropdown-escaped', this._boundHandleAutocompleteEscape);
+                    }
                 }
                 removeEventListeners() {
                     const d = this.querySelector(".delete-tag");
@@ -2784,10 +3230,8 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                             "keydown",
                             this._boundHandleSpanKeyDown
                         );
-                        s.removeEventListener(
-                            "blur",
-                            this._boundHandleSpanBlur
-                        );
+                        s.removeEventListener("blur", this._boundHandleSpanBlur);
+                        s.removeEventListener('input', this._debouncedHandleSpanInput);
                     }
                     this.removeEventListener(
                         "dragstart",
@@ -2798,7 +3242,123 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                         this._boundHandleDragEnd
                     );
                      this.removeEventListener("contextmenu", this._boundHandleContextMenu);
+                    if (globalTagAutocompleteDropdown) {
+                        globalTagAutocompleteDropdown.removeEventListener('suggestion-selected', this._boundHandleAutocompleteSelection);
+                        globalTagAutocompleteDropdown.removeEventListener('dropdown-escaped', this._boundHandleAutocompleteEscape);
+                    }
                 }
+
+                _handleSpanDblClick(e) {
+                    e.stopPropagation();
+                    const span = e.target;
+                    this._originalText = getTagText(this);
+                    span.contentEditable = "true";
+                    span.focus();
+                    window.getSelection().selectAllChildren(span);
+                }
+
+                _handleSpanInput(e) { 
+                    const span = e.target;
+                    if (span.contentEditable !== 'true' || !globalTagAutocompleteDropdown || booruTags.length === 0) {
+                        globalTagAutocompleteDropdown?.hide();
+                        return;
+                    }
+                
+                    const inputText = span.textContent.trim().toLowerCase();
+                    if (inputText.length < 1) { 
+                        globalTagAutocompleteDropdown.hide();
+                        return;
+                    }
+                
+                    const matchedTags = booruTags
+                        .filter(tag => tag.name.toLowerCase().startsWith(inputText))
+                        // .sort((a, b) => b.count - a.count) // Tags are already pre-sorted by count
+                        .slice(0, MAX_SUGGESTIONS);
+                
+                    if (matchedTags.length > 0) {
+                        // Pass the span itself as the target for positioning
+                        globalTagAutocompleteDropdown.show(matchedTags, span);
+                    } else {
+                        globalTagAutocompleteDropdown.hide();
+                    }
+                }
+
+                _handleSpanKeyDown(e) {
+                    const span = e.target;
+                    if (span.contentEditable === "true") {
+                        if (globalTagAutocompleteDropdown && globalTagAutocompleteDropdown.classList.contains('visible') && e.defaultPrevented) {
+                            // Autocomplete handled the key (Up, Down, Enter, Esc, Tab)
+                            return;
+                        }
+                
+                        // If autocomplete is NOT visible, or it is visible but didn't handle the key
+                        if (e.key === "Enter") {
+                            e.preventDefault();
+                            globalTagAutocompleteDropdown.hide(); 
+                            span.blur(); 
+                        } else if (e.key === "Escape") {
+                            e.preventDefault();
+                            globalTagAutocompleteDropdown.hide(); 
+                            span.textContent = this._originalText;
+                            span.blur(); 
+                        }
+                    }
+                }
+
+                _handleSpanBlur(e) {
+                    const span = e.target;
+                    if (!this.isConnected) return;
+                
+                    setTimeout(() => {
+                        if (span.contentEditable === 'false') {
+                            // Already finalized by autocomplete selection or escape
+                            return;
+                        }
+                
+                        globalTagAutocompleteDropdown.hide(); 
+                
+                        span.contentEditable = "false";
+                        const newRawText = span.textContent;
+                
+                        if (newRawText === this._originalText) {
+                            span.textContent = this._originalText || "empty_tag";
+                            return;
+                        }
+                        this._processEditedText(newRawText);
+                    }, 50); 
+                }
+                
+                _handleAutocompleteSelection(e) {
+                    // Check if this event is relevant to this specific tag instance
+                    const span = this.querySelector("span[contenteditable='true']");
+                    if (span && globalTagAutocompleteDropdown._targetElement === span && e.target === globalTagAutocompleteDropdown) {
+                        const selectedTag = e.detail;
+                        span.textContent = selectedTag.name;
+                
+                        span.contentEditable = "false"; 
+                        // globalTagAutocompleteDropdown.hide(); // Already hidden by dropdown's _selectItem
+
+                        const range = document.createRange();
+                        const sel = window.getSelection();
+                        range.selectNodeContents(span);
+                        range.collapse(false);
+                        sel.removeAllRanges();
+                        sel.addRange(range);
+                        
+                        this._processEditedText(span.textContent); 
+                    }
+                }
+                
+                _handleAutocompleteEscape(e) {
+                     const span = this.querySelector("span[contenteditable='true']");
+                     // Check if this event is relevant to this specific tag instance
+                    if (span && globalTagAutocompleteDropdown._targetElement === span && e.target === globalTagAutocompleteDropdown) {
+                        span.textContent = this._originalText; 
+                        span.contentEditable = "false"; 
+                        // globalTagAutocompleteDropdown.hide(); // Already hidden by dropdown's Escape handler
+                    }
+                }
+
                 _handleDeleteClick(e) {
                     e.stopPropagation();
                     const parentTagList = this.closest("tag-list");
@@ -2821,47 +3381,14 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                 _handleDeleteMouseDown(e) {
                     e.stopPropagation();
                 }
-                _handleSpanDblClick(e) {
-                    e.stopPropagation();
-                    const span = e.target;
-                    this._originalText = getTagText(this);
-                    span.contentEditable = "true";
-                    span.focus();
-
-                    window.getSelection().selectAllChildren(span);
-                }
-
-                _handleSpanKeyDown(e) {
-                    const span = e.target;
-                    if (span.contentEditable === "true") {
-                        if (e.key === "Enter") {
-                            e.preventDefault();
-                            span.blur();
-                        } else if (e.key === "Escape") {
-                            e.preventDefault();
-                            span.textContent = this._originalText;
-                            span.blur();
-                        }
-                    }
-                }
-
-                _handleSpanBlur(e) {
-                    const span = e.target;
-                    if (!this.isConnected) return;
-
-                    span.contentEditable = "false";
-                    const newRawText = span.textContent;
-
-                    if (newRawText === this._originalText) {
-                        span.textContent = this._originalText || "empty_tag";
-                        return;
-                    }
-                    this._processEditedText(newRawText);
-                }
-
+                
                 _processEditedText(rawText) {
                     const finalTagTexts = parseRawTagInput(rawText);
                     const parentTagList = this.closest("tag-list");
+                    const span = this.querySelector("span[contenteditable]");
+                    if (span) {
+                        span.setAttribute("translate", "no");
+                    }
 
                     if (!parentTagList) {
                         const span = this.querySelector(
@@ -2887,11 +3414,12 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                             else
                                 span.textContent =
                                     this._originalText || "empty_tag";
-                        } else {
+                        } else { // Multiple tags entered, keep first in this tag, add others to list (if applicable)
                             const firstTagText = finalTagTexts[0];
+                            let originalTextChanged = (firstTagText !== this._originalText);
                             span.textContent = firstTagText;
                             this._originalText = firstTagText;
-                            if (firstTagText !== this._originalText) {
+                            if (originalTextChanged) {
                                 this.dispatchEvent(
                                     new CustomEvent("tag-updated", {
                                         bubbles: true,
@@ -2914,7 +3442,7 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                             this.querySelector(
                                 "span[contenteditable]"
                             ).textContent = this._originalText;
-                            return;
+                            return; // No actual change
                         }
 
                         let isDuplicateOfSibling = false;
@@ -2933,7 +3461,7 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                         }
 
                         if (isDuplicateOfSibling) {
-                            this.remove();
+                            this.remove(); // Remove this tag as it's now a duplicate
                         } else {
                             this.querySelector(
                                 "span[contenteditable]"
@@ -2941,8 +3469,8 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                             this._originalText = newText;
                         }
                         changeOccurred = true;
-                    } else {
-                        const firstTagText = finalTagTexts.shift();
+                    } else { // Multiple tags entered via editing one
+                        const firstTagText = finalTagTexts.shift(); // Take the first for the current tag
 
                         let isFirstDuplicateOfSibling = false;
                         const siblings = Array.from(
@@ -2960,7 +3488,7 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                         }
 
                         if (isFirstDuplicateOfSibling) {
-                            this.remove();
+                            this.remove(); // Current tag becomes a duplicate, remove it
                         } else {
                             this.querySelector(
                                 "span[contenteditable]"
@@ -2968,8 +3496,9 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                             this._originalText = firstTagText;
                         }
 
+                        // Add the rest as new tags to the list
                         for (const text of finalTagTexts) {
-                            parentTagList.addTag(text);
+                            parentTagList.addTag(text); // addTag handles its own duplication checks within the list
                         }
                         changeOccurred = true;
                     }
@@ -3023,7 +3552,7 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                     e.stopPropagation();
 
                     const tagText = getTagText(this);
-                    const isInCategory = !!this.closest('tag-category');
+                    const isInGroup = !!this.closest('tag-group');
                     const selectedCount = opentaggerAPI.getSelectedEntries().length;
 
                     const items = [
@@ -3046,12 +3575,12 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                          { type: "divider" },
                          {
                              label: "Edit Tag (Double Click)",
-                             callback: null, // Informative, not actionable via context menu
-                             disabled: true, // Always disabled in context menu
+                             callback: null, 
+                             disabled: true, 
                          },
                          {
                              label: "Delete Tag",
-                             callback: () => this._handleDeleteClick(e), // Use the internal delete handler
+                             callback: () => this._handleDeleteClick(e), 
                          }
                     ];
 
@@ -3140,11 +3669,8 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                     this.appendChild(this.addTagButtonElement);
                 }
                 _handleAddTagButtonClick(event) {
-                    // Diagnostic log for Bug #3
-                    // console.log('[TagList] _handleAddTagButtonClick called. Target:', event.target, 'CurrentTarget:', event.currentTarget, 'isEditingNewTag:', this.isEditingNewTag, 'has addTagButtonElement:', !!this.addTagButtonElement);
                     event.stopPropagation();
                     if (this.isEditingNewTag || !this.addTagButtonElement) {
-                        // console.log('[TagList] Returning early from _handleAddTagButtonClick.');
                         return;
                     }
                     this.isEditingNewTag = true;
@@ -3238,12 +3764,8 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
 
                     if (shouldProcessTags && rawInputText.trim()) {
                         const finalTagTexts = parseRawTagInput(rawInputText);
-                        // let tagsAdded = 0; // Variable not used
-
                         for (const tagText of finalTagTexts) {
-                            if (this.addTag(tagText)) {
-                                // tagsAdded++; // Variable not used
-                            }
+                            this.addTag(tagText);
                         }
                     }
                 }
@@ -3306,36 +3828,29 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                         const amInDatasetEntry = !!this.closest("dataset-entry");
                         const selectedEntries = opentaggerAPI.getSelectedEntries();
                         const sourceList = draggedElement.closest("tag-list");
-                        const isSourceCategory = !!draggedElement.closest("tag-category");
+                        const isSourceGroup = !!draggedElement.closest("tag-group");
 
                         let eventHandledBySelection = false;
 
-                        // Case 1: Dragging from a category or another entry's list, AND there's a selection, AND this TagList is in an entry.
-                        if (amInDatasetEntry && selectedEntries.length > 0 && (isSourceCategory || (sourceList && sourceList !== this))) {
+                        if (amInDatasetEntry && selectedEntries.length > 0 && (isSourceGroup || (sourceList && sourceList !== this))) {
                             let anyTagAddedToSelection = false;
                             for (const entry of selectedEntries) {
-                                if (entry.addTag(tagText)) { // addTag handles duplicates & dispatches its own events
+                                if (entry.addTag(tagText)) { 
                                     anyTagAddedToSelection = true;
                                 }
                             }
-                            if (anyTagAddedToSelection) {
-                                // No extra global event needed here, addTag in DatasetEntry handles it.
-                            }
-                            eventHandledBySelection = true; // Mark that the primary action was on the selection.
+                            eventHandledBySelection = true; 
                         }
 
-                        // Case 2: If not handled by selection logic above, or if it's an internal drag/move, or drop on a category list.
-                        // This will handle reordering within the same list, or adding a copied tag to a single list (selected or not).
-                        if (!eventHandledBySelection || (sourceList === this)) { // If it was a drag within the same list, still perform move/reorder.
+                        if (!eventHandledBySelection || (sourceList === this)) { 
                             const effect = this.determineDropEffect(draggedElement);
                             const dropTargetUiElement = this.findDropTarget(e.clientX, e.clientY);
 
-                            // Prevent dropping onto the add button or input field itself
                             if (this.addTagButtonElement && (e.target === this.addTagButtonElement || this.addTagButtonElement.contains(e.target))) return;
                             if (this.addTagInputElement && (e.target === this.addTagInputElement || this.addTagInputElement.contains(e.target))) return;
 
                             let actionPerformedLocally = false;
-                            if (effect === "copy") { // From category, or from another entry's list to this one.
+                            if (effect === "copy") { 
                                 if (this.addTag(tagText)) {
                                     const newTag = Array.from(this.querySelectorAll("dataset-tag")).find(t => getTagText(t) === tagText);
                                     if (newTag && dropTargetUiElement && (!this.addTagButtonElement || dropTargetUiElement !== this.addTagButtonElement)) {
@@ -3343,18 +3858,17 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                                     }
                                     actionPerformedLocally = true;
                                 }
-                            } else if (effect === "move") { // Only if sourceList === this (reordering)
+                            } else if (effect === "move") { 
                                 if (draggedElement.parentElement === this && dropTargetUiElement !== draggedElement.nextElementSibling) {
                                     this.insertBefore(draggedElement, dropTargetUiElement);
                                     actionPerformedLocally = true;
                                 }
                             }
 
-                            if (actionPerformedLocally && !eventHandledBySelection) { // Dispatch if action was local and not part of selection batch
+                            if (actionPerformedLocally && !eventHandledBySelection) { 
                                 this.dispatchEvent(new CustomEvent("tag-updated", { bubbles: true, composed: true }));
                                 this.dispatchEvent(new CustomEvent("tag-list-changed-internally", { bubbles: true, composed: true }));
                             }
-                            console.log("TagList drop effect:", effect);
                             sfx.sfxPop.volume = 1.0;
                             sfx.sfxPop.play();
                         }
@@ -3362,10 +3876,10 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                 }
                 determineDropEffect(el) {
                     const sourceList = el.closest("tag-list");
-                    const sourceCategory = el.closest("tag-category");
+                    const sourceGroup = el.closest("tag-group");
                     const targetEntry = this.closest("dataset-entry");
 
-                    if (sourceCategory && targetEntry) return "copy";
+                    if (sourceGroup && targetEntry) return "copy";
                     if (sourceList === this) return "move";
                     return "copy";
                 }
@@ -3585,7 +4099,7 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                     this.originalImageName = "";
                     this._selected = false;
                     this._boundCheckAndUpdate =
-                        this.checkCategoryRequirementsAndUpdateVisuals.bind(
+                        this.checkGroupRequirementsAndUpdateVisuals.bind(
                             this
                         );
                     this._boundHandleImageClick =
@@ -3654,7 +4168,7 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                     this.addEventListener("contextmenu", this._boundHandleContextMenu);
 
 
-                    this.checkCategoryRequirementsAndUpdateVisuals();
+                    this.checkGroupRequirementsAndUpdateVisuals();
                     this.addDragDropListeners();
 
                     if (img && this.imageSrc && !img.src) {
@@ -3694,84 +4208,74 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                     const isCtrlPressed = event.ctrlKey || event.metaKey; // metaKey for macOS
                     const isShiftPressed = event.shiftKey;
 
-                    // Prevent default text selection behavior on the entry itself
                     const targetTagName = event.target.tagName.toLowerCase();
                     if (targetTagName !== 'input' && targetTagName !== 'textarea' && !event.target.isContentEditable && event.target !== clickedEntry.querySelector('img')) {
                        event.preventDefault();
                     }
 
-                    // If clicking on a tag, button, or editable span, let those handlers manage propagation
                     const target = event.target;
                     if (
                         target.closest('button') ||
-                        target.closest('dataset-tag') ||
+                        target.closest('dataset-tag') || // Allow click on tag to propagate if needed by tag itself
                         target.closest('span[contenteditable="true"]') ||
-                        target.tagName === 'IMG' // Image click is for preview
+                        target.tagName === 'IMG' 
                     ) {
-                        // If the click target was inside an interactive element, do nothing here.
-                        return;
+                        // If the dataset-tag was clicked, and it wasn't the editable span or delete button,
+                        // it might be for initiating drag. Let the event propagate for that.
+                        // If it was span/button, those have their own handlers.
+                        if (target.closest('dataset-tag') && !target.closest('span[contenteditable]') && !target.closest('.delete-tag')) {
+                            // Fine, could be drag start
+                        } else {
+                             return; // Otherwise, specific interactive element was clicked.
+                        }
                     }
-
-                    // Stop propagation to prevent document-level listeners (like context menu hide) from interfering immediately
+                    
                     event.stopPropagation();
 
-                    if (isShiftPressed && g_lastClickedEntryForShiftSelect && mainContentAreaElement) {
+                    if (isShiftPressed && globalLastClickedEntryForShiftSelect && mainContentAreaElement) {
                         const allVisibleEntries = Array.from(mainContentAreaElement.querySelectorAll('dataset-entry:not([style*="display: none"])'));
                         const currentIndex = allVisibleEntries.indexOf(clickedEntry);
-                        const lastIndex = allVisibleEntries.indexOf(g_lastClickedEntryForShiftSelect);
+                        const lastIndex = allVisibleEntries.indexOf(globalLastClickedEntryForShiftSelect);
 
                         if (currentIndex !== -1 && lastIndex !== -1) {
                             const start = Math.min(currentIndex, lastIndex);
                             const end = Math.max(currentIndex, lastIndex);
 
-                            // If Ctrl is NOT pressed, clear the *entire* current selection first
-                            // This matches standard OS behavior for Shift-click without Ctrl
                             if (!isCtrlPressed) {
                                 for (const entry of mainContentAreaElement.querySelectorAll('dataset-entry[selected]')) {
                                     entry.selected = false;
                                 }
                             }
 
-                            // Select the range between the last clicked entry and the current one
                             for (let i = start; i <= end; i++) {
                                 if (allVisibleEntries[i]) {
                                    allVisibleEntries[i].selected = true;
                                 }
                             }
-                            // g_lastClickedEntryForShiftSelect is NOT updated by a Shift+Click.
-                            // It remains the entry from the *previous* click that started the range.
                         } else {
-                             // Fallback: if shift range calculation fails (e.g., last clicked entry is hidden),
-                             // just toggle the current entry and update the anchor.
                              clickedEntry.selected = !wasSelected;
-                             g_lastClickedEntryForShiftSelect = clickedEntry.selected ? clickedEntry : null;
+                             globalLastClickedEntryForShiftSelect = clickedEntry.selected ? clickedEntry : null;
                         }
                     } else if (isCtrlPressed) {
-                        // Ctrl+Click: Toggle selection of the current entry
                         clickedEntry.selected = !wasSelected;
-                        // Update g_lastClickedEntryForShiftSelect only if this click resulted in selection
-                        // or if it was the anchor and is now deselected.
                         if (clickedEntry.selected) {
-                            g_lastClickedEntryForShiftSelect = clickedEntry;
-                        } else if (g_lastClickedEntryForShiftSelect === clickedEntry) {
-                            g_lastClickedEntryForShiftSelect = null;
+                            globalLastClickedEntryForShiftSelect = clickedEntry;
+                        } else if (globalLastClickedEntryForShiftSelect === clickedEntry) {
+                            globalLastClickedEntryForShiftSelect = null;
                         }
                     } else {
-                        // Simple Click: Deselect all others, select this one
                         const currentlySelected = opentaggerAPI.getSelectedEntries();
                         const isAlreadySolelySelected = currentlySelected.length === 1 && currentlySelected[0] === clickedEntry;
 
                         if (isAlreadySolelySelected && wasSelected) {
-                             // If it was the only one selected and clicked again, deselect it
                              clickedEntry.selected = false;
-                             g_lastClickedEntryForShiftSelect = null;
+                             globalLastClickedEntryForShiftSelect = null;
                         } else {
-                             // Otherwise, deselect all and select this one
                             for (const entry of currentlySelected) {
                                 entry.selected = false;
                             }
                             clickedEntry.selected = true;
-                            g_lastClickedEntryForShiftSelect = clickedEntry;
+                            globalLastClickedEntryForShiftSelect = clickedEntry;
                         }
                     }
                 }
@@ -3781,9 +4285,6 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                      e.stopPropagation();
 
                      const entry = this;
-                     // Determine which entries the context menu actions apply to.
-                     // If the right-clicked entry is NOT selected, the menu applies *only* to it.
-                     // If the right-clicked entry *IS* selected, the menu applies to the *entire selection*.
                      const targetEntries = entry.selected ? opentaggerAPI.getSelectedEntries() : [entry];
                      const targetCount = targetEntries.length;
 
@@ -3792,12 +4293,12 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                          {
                              label: "Preview Image",
                              callback: () =>
-                                 entry._handleImageClick(e), // Applies to this entry only
+                                 entry._handleImageClick(e), 
                          },
                          {
                              label: "Autotag Image (AI)",
                              callback: () =>
-                                 entry.triggerAutotag(false), // Applies to this entry only
+                                 entry.triggerAutotag(false), 
                          },
                          { type: "divider" },
                          { label: `Copy Tags (${targetCount} selected) (NYI)`, disabled: true },
@@ -3815,20 +4316,20 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                          },
                          { type: "divider" },
                          {
-                             label: "Apply Category Tags",
-                             items: getCategorySubmenuItems(targetEntries), // Pass targetEntries to submenu
+                             label: "Apply Group Tags",
+                             items: getGroupSubmenuItems(targetEntries), 
                              disabled: () => targetCount === 0,
                          },
                          { type: "divider" },
                          {
                              label: "Check Requirements",
                              callback: () =>
-                                 entry.checkCategoryRequirementsAndUpdateVisuals(), // Applies to this entry only
+                                 entry.checkGroupRequirementsAndUpdateVisuals(), 
                          },
                          { type: "divider" },
                          {
                              label: "Delete Entry",
-                             callback: () => entry.deleteEntry(), // Applies to this entry only
+                             callback: () => entry.deleteEntry(), 
                          },
                      ];
 
@@ -3839,10 +4340,9 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                              callback: () => {
                                  showConfirmationModal(`Are you sure you want to delete ${targetCount} selected entries?`, [
                                      { text: "Delete", class:"modal-button-confirm", onClick: () => {
-                                         // Iterate over a *copy* of the array because deleting modifies the live collection
                                          const entriesToDelete = [...targetEntries];
                                          for(const en of entriesToDelete) en.deleteEntry();
-                                         g_lastClickedEntryForShiftSelect = null; // Clear last clicked if any of the deleted were it
+                                         globalLastClickedEntryForShiftSelect = null; 
                                      }},
                                      { text: "Cancel", class:"modal-button-cancel" }
                                  ]);
@@ -3898,7 +4398,6 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                         );
                     }
 
-                    // Check if the button is disabled, potentially by a global process
                     if (autotagButton.disabled) {
                          if (!silent) {
                              console.warn(
@@ -3924,7 +4423,6 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                     };
 
                     if (!silent && buttonWrapper) {
-                        // Remove any existing timer label
                         buttonWrapper
                             .querySelector(".autotag-timer-label")
                             ?.remove();
@@ -3932,13 +4430,12 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                         buttonWrapper.appendChild(timerLabel);
                         timer = startTimer((timeString) => {
                             if (timerLabel) timerLabel.textContent = timeString;
-                        }, 100); // Update timer every 100ms
+                        }, 100); 
                     }
 
                     const originalIcon = autotagButton.textContent;
                     const originalTitle = autotagButton.getAttribute("title");
 
-                    // Disable the button immediately
                     autotagButton.disabled = true;
                     if (!silent) {
                         autotagButton.textContent = "sync";
@@ -4062,7 +4559,6 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                             autotagButton.classList.remove("loading");
                         }
 
-                        // Re-enable the button unless a global process is still active
                         if (!autotagAllButton.classList.contains('loading')) {
                              autotagButton.disabled = false;
                         }
@@ -4171,7 +4667,7 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                         img.alt = this.originalImageName;
                         img.title = "Click to preview";
                     }
-                    this.checkCategoryRequirementsAndUpdateVisuals();
+                    this.checkGroupRequirementsAndUpdateVisuals();
                 }
                 async getImageData() {
                     if (
@@ -4253,24 +4749,24 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                 getNormalizedTags() {
                     return this.getTags().map((tag) => tag.toLowerCase());
                 }
-                checkCategoryRequirements() {
-                    const categories = document.querySelectorAll(
-                        "#tag-category-list tag-category"
+                checkGroupRequirements() {
+                    const groups = document.querySelectorAll(
+                        "#tag-group-list tag-group"
                     );
                     const entryTagsLower = this.getNormalizedTags();
 
-                    for (const category of categories) {
-                        const minRequired = category.minimumTags;
+                    for (const group of groups) {
+                        const minRequired = group.minimumTags;
                         if (minRequired <= 0) continue;
 
-                        const categoryTagsLower = category
-                            .getCategoryTags()
+                        const groupTagsLower = group
+                            .getGroupTags()
                             .map((t) => t.toLowerCase());
-                        if (categoryTagsLower.length === 0) continue;
+                        if (groupTagsLower.length === 0) continue;
 
                         let count = 0;
                         for (const entryTag of entryTagsLower) {
-                            if (categoryTagsLower.includes(entryTag)) {
+                            if (groupTagsLower.includes(entryTag)) {
                                 count++;
                             }
                         }
@@ -4280,8 +4776,8 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                     }
                     return true;
                 }
-                checkCategoryRequirementsAndUpdateVisuals() {
-                    const requirementsMet = this.checkCategoryRequirements();
+                checkGroupRequirementsAndUpdateVisuals() {
+                    const requirementsMet = this.checkGroupRequirements();
                     if (requirementsMet) {
                         this.classList.remove("requirement-not-met");
                     } else {
@@ -4299,14 +4795,14 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
             }
             customElements.define("dataset-entry", DatasetEntry);
 
-            class TagCategory extends HTMLElement {
+            class TagGroup extends HTMLElement {
                 constructor() {
                     super();
                     this._minimumTags = 0;
                     this._boundUpdateMinTags = this._updateMinTags.bind(this);
                     this._boundHandleContextMenu = this._handleContextMenu.bind(this);
                 }
-                static observedAttributes = ["category-name"];
+                static observedAttributes = ["group-name"];
                 get minimumTags() {
                     return this._minimumTags;
                 }
@@ -4317,21 +4813,21 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                         this.updateMinTagsDisplay();
 
                         document.dispatchEvent(
-                            new CustomEvent("category-min-tags-changed", {
-                                detail: { category: this },
+                            new CustomEvent("group-min-tags-changed", {
+                                detail: { group: this },
                             })
                         );
                     }
                 }
                 connectedCallback() {
                     const name =
-                        this.getAttribute("category-name") || "New Category";
+                        this.getAttribute("group-name") || "New Group";
                     const tags = Array.from(
                         this.querySelectorAll("dataset-tag")
                     );
                     this.innerHTML = `
-            <div class="category-header">
-                <span class="category-name" contenteditable="true">${name}</span>
+            <div class="group-header">
+                <span class="group-name" contenteditable="true">${name}</span>
                  <div class="min-tags-control">
                      <span>Min:</span>
                      <button class="min-tags-decrement material-icons" speaker="Decrease Minimum Tags">remove</button>
@@ -4341,17 +4837,17 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                  <button class="btn-new-tag material-icons" speaker="Add New Tag">add_circle_outline</button>
             </div>
              <tag-list direction="column"></tag-list>
-             <button class="delete-category material-icons" speaker="Delete Category">delete</button>`;
+             <button class="delete-group material-icons" speaker="Delete Group">delete</button>`;
                     this.style.position = "relative";
 
-                    const delBtn = this.querySelector(".delete-category");
+                    const delBtn = this.querySelector(".delete-group");
                     delBtn.style.cssText = `position: absolute; bottom: 5px; right: 5px; background: none; border: none; cursor: pointer; color: #aaa; font-size: 18px;`;
                     delBtn.addEventListener("click", () => {
                         this.remove();
 
                         document.dispatchEvent(
-                            new CustomEvent("category-min-tags-changed", {
-                                detail: { category: null },
+                            new CustomEvent("group-min-tags-changed", {
+                                detail: { group: null },
                             })
                         );
                     });
@@ -4366,15 +4862,15 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                 }
                 disconnectedCallback() {}
                 attributeChangedCallback(name, oldV, newV) {
-                    if (name === "category-name") {
-                        const s = this.querySelector(".category-name");
+                    if (name === "group-name") {
+                        const s = this.querySelector(".group-name");
                         if (s) s.textContent = newV;
                     }
                 }
                 addEventListeners() {
                     const addBtn = this.querySelector(".btn-new-tag");
                     const list = this.querySelector("tag-list");
-                    const nameSpan = this.querySelector(".category-name");
+                    const nameSpan = this.querySelector(".group-name");
                     const incBtn = this.querySelector(".min-tags-increment");
                     const decBtn = this.querySelector(".min-tags-decrement");
 
@@ -4394,7 +4890,7 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                                             "contenteditable",
                                             "true"
                                         );
-                                        tag._originalText = getTagText(tag);
+                                        tag._originalText = getTagText(tag); // Set original text before focus
                                         s.focus();
 
                                         window
@@ -4412,7 +4908,7 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                                 nameSpan.blur();
                             } else if (e.key === "Escape") {
                                 nameSpan.textContent =
-                                    this.getAttribute("category-name") ||
+                                    this.getAttribute("group-name") ||
                                     "New Cat";
                                 nameSpan.blur();
                             }
@@ -4422,13 +4918,13 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                             if (
                                 n &&
                                 n !==
-                                    (this.getAttribute("category-name") ||
+                                    (this.getAttribute("group-name") ||
                                         "New Cat")
                             ) {
-                                this.setAttribute("category-name", n);
+                                this.setAttribute("group-name", n);
                             } else {
                                 nameSpan.textContent =
-                                    this.getAttribute("category-name") ||
+                                    this.getAttribute("group-name") ||
                                     "New Cat";
                             }
                         });
@@ -4457,15 +4953,15 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                 }
                 removeEventListeners() {
                      const addBtn = this.querySelector(".btn-new-tag");
-                     const nameSpan = this.querySelector(".category-name");
+                     const nameSpan = this.querySelector(".group-name");
                      const incBtn = this.querySelector(".min-tags-increment");
                      const decBtn = this.querySelector(".min-tags-decrement");
 
-                     addBtn?.removeEventListener("click", this._handleAddTagButtonClick);
-                     nameSpan?.removeEventListener("keydown", this._handleSpanKeyDown); // Assuming same handler as tag span
-                     nameSpan?.removeEventListener("blur", this._handleSpanBlur); // Assuming same handler as tag span
-                     incBtn?.removeEventListener("click", this._boundUpdateMinTags);
-                     decBtn?.removeEventListener("click", this._boundUpdateMinTags);
+                     addBtn?.removeEventListener("click", this._handleAddTagButtonClick); // Assuming this was a typo for actual method
+                     nameSpan?.removeEventListener("keydown", this._handleSpanKeyDown); 
+                     nameSpan?.removeEventListener("blur", this._handleSpanBlur); 
+                     incBtn?.removeEventListener("click", this._boundUpdateMinTags); // This should be correct
+                     decBtn?.removeEventListener("click", this._boundUpdateMinTags); // This should be correct
 
                      addBtn?.removeEventListener("mousedown", (e) => e.stopPropagation());
                      incBtn?.removeEventListener("mousedown", (e) => e.stopPropagation());
@@ -4483,7 +4979,7 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                         valueSpan.textContent = this._minimumTags;
                     }
                 }
-                getCategoryTags() {
+                getGroupTags() {
                     const list = this.querySelector("tag-list");
                     return list ? list.getTags() : [];
                 }
@@ -4497,22 +4993,22 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                     e.stopPropagation();
 
                     const items = [
-                        { label: "Rename Category (Double Click Name)", callback: null, disabled: true },
+                        { label: "Rename Group (Double Click Name)", callback: null, disabled: true },
                         {
                             label: "Add New Tag",
                             callback: () => this.querySelector(".btn-new-tag")?.click(),
                         },
                         { type: "divider" },
                         {
-                            label: "Delete Category",
-                            callback: () => this.querySelector(".delete-category")?.click(),
+                            label: "Delete Group",
+                            callback: () => this.querySelector(".delete-group")?.click(),
                         },
                     ];
 
                     createContextMenu(items, e);
                 }
             }
-            customElements.define("tag-category", TagCategory);
+            customElements.define("tag-group", TagGroup);
 
             class MenuItem extends HTMLElement {
                 constructor() {
@@ -4603,19 +5099,8 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                             anchorElement.getBoundingClientRect();
                         targetY = anchorRect.bottom + 2;
                         targetX = anchorRect.left;
-                        // console.log("ContextMenu.show anchored:", {
-                        //     anchorLeft: anchorRect.left,
-                        //     anchorBottom: anchorRect.bottom,
-                        //     anchorWidth: anchorRect.width,
-                        //     calculatedX: targetX,
-                        //     calculatedY: targetY,
-                        //     menuMinWidthBeforeAdjustment:
-                        //         this.style.minWidth ||
-                        //         getComputedStyle(this).minWidth,
-                        // });
                     } else {
                         this.style.minWidth = "150px";
-                        // console.log("ContextMenu.show at mouse:", { x, y });
                     }
 
                     this.style.left = `${targetX}px`;
@@ -4623,7 +5108,6 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                     this.classList.add("visible");
                     this.style.display = "flex";
 
-                    // Position adjustment based on screen bounds
                     requestAnimationFrame(() => {
                          const rect = this.getBoundingClientRect();
                          const screenWidth = window.innerWidth;
@@ -4690,18 +5174,6 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
             customElements.define("context-menu", ContextMenu);
 
             let currentContextMenu = null;
-            /**
-             * Creates and shows a context menu.
-             * @param {Array<Object>} items - Array of menu item definitions. Each object can have:
-             *   - label: string (Text to display)
-             *   - callback: function (Function to run when clicked)
-             *   - items: Array<Object> (Submenu items)
-             *   - type: 'divider' (To add a horizontal rule)
-             *   - disabled: boolean | function (If true or function returns true, item is disabled)
-             *   - hidden: boolean | function (If true or function returns true, item is hidden)
-             *   - dataAction: string (Optional data attribute)
-             * @param {MouseEvent | HTMLElement} triggerElementOrEvent - The mouse event or the element that triggered the menu.
-             */
             function createContextMenu(items, triggerElementOrEvent) {
                 currentContextMenu?.remove();
                 currentContextMenu = null;
@@ -4715,7 +5187,6 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                         const menuItem = document.createElement("menu-item");
                         menuItem.textContent = item.label || "Item";
 
-                        // Check for hidden state
                         let isHidden = false;
                         if (typeof item.hidden === 'function') {
                             isHidden = item.hidden(triggerElementOrEvent);
@@ -4727,7 +5198,6 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                         }
 
 
-                        // Check for disabled state
                         let isDisabled = false;
                          if (typeof item.disabled === 'function') {
                              isDisabled = item.disabled(triggerElementOrEvent);
@@ -4741,7 +5211,6 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                             if (item.callback && typeof item.callback === "function") {
                                 menuItem.callback = item.callback;
                             } else if (!item.items) {
-                                // If not disabled, but no callback and no submenu, still make it non-interactive
                                 menuItem.style.opacity = "0.5";
                                 menuItem.style.pointerEvents = "none";
                             }
@@ -4766,7 +5235,6 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                                     subMenuItem.textContent =
                                         subItem.label || "Sub Item";
 
-                                     // Check for hidden state in submenu
                                      let isSubHidden = false;
                                      if (typeof subItem.hidden === 'function') {
                                          isSubHidden = subItem.hidden(triggerElementOrEvent);
@@ -4777,7 +5245,6 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                                          subMenuItem.style.display = 'none';
                                      }
 
-                                     // Check for disabled state in submenu
                                      let isSubDisabled = false;
                                      if (typeof subItem.disabled === 'function') {
                                          isSubDisabled = subItem.disabled(triggerElementOrEvent);
@@ -4818,7 +5285,6 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                 }
 
                 if (triggerElementOrEvent instanceof Event) {
-                    // Prevent default browser context menu
                     triggerElementOrEvent.preventDefault();
                     menu.show(
                         triggerElementOrEvent.clientX,
@@ -5026,7 +5492,6 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                     );
                 }, 200);
 
-                // Disable individual autotag buttons during global process
                 for (const entry of entriesToAutotag) {
                     const btn = entry.querySelector(".autotag-entry");
                     if (btn) btn.disabled = true;
@@ -5043,7 +5508,6 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                         }/${totalEntries}: ${entryDisplayName} (${globalTimer.getElapsedTime()})`
                     );
                     try {
-                        // Pass silent=true to prevent individual button updates/timers
                         const result = await entry.triggerAutotag(true);
                         if (result && result.success) {
                             successCount++;
@@ -5081,7 +5545,6 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                 autotagAllButton.classList.remove("loading");
                 autotagAllButton.disabled = false;
 
-                // Re-enable individual autotag buttons
                 for (const entry of entriesToAutotag) {
                     const btn = entry.querySelector(".autotag-entry");
                     if (btn) btn.disabled = false;
@@ -5111,8 +5574,6 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                 showConfirmationModal(summaryMessage, [{ text: "OK" }]);
             }
 
-            // Removed sortSelectedEntriesToTop function as it's no longer needed
-            // and was causing selection behavior issues.
 
             function filterEntries(query) {
                 if (!mainContentAreaElement || !searchInput) {
@@ -5127,18 +5588,17 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                 query = query.trim().toLowerCase();
 
                 if (query === "") {
-                    g_parsedSearchTerms = [];
-                    g_searchTermColors = {};
+                    globalParsedSearchTerms = [];
+                    globalSearchTermColors = {};
                 } else {
-                    g_parsedSearchTerms = getQueryLeafTerms(query);
-                    g_searchTermColors = {};
+                    globalParsedSearchTerms = getQueryLeafTerms(query);
+                    globalSearchTermColors = {};
 
-                    for (const term of g_parsedSearchTerms) {
-                        g_searchTermColors[term] = getTagColor(term);
+                    for (const term of globalParsedSearchTerms) {
+                        globalSearchTermColors[term] = getTagColor(term);
                     }
                 }
 
-                // let hasVisible = false; // Variable not used
 
                 for (const entry of entries) {
                     const tags = entry.getNormalizedTags();
@@ -5148,11 +5608,10 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                     entry.style.display = match ? "" : "none";
 
                     if (match) {
-                        // hasVisible = true; // Variable not used
-                        if (g_parsedSearchTerms.length > 0) {
+                        if (globalParsedSearchTerms.length > 0) {
                             entry.applyTagHighlighting(
-                                g_parsedSearchTerms,
-                                g_searchTermColors
+                                globalParsedSearchTerms,
+                                globalSearchTermColors
                             );
                         } else {
                             entry.clearTagHighlighting();
@@ -5258,13 +5717,11 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
 
             function processConsoleInput(inputValue) {
                 if (inputValue.startsWith("/")) {
-                    // Simple split by spaces, respecting quotes
                     const parts =
                         inputValue.match(/(?:[^\s"]+|"[^"]*")+/g) || [];
                     if (parts.length === 0) return;
 
                     const commandName = parts[0].substring(1).toLowerCase();
-                     // Remove quotes from args
                     const args = parts.map((p) =>
                         p.startsWith('"') && p.endsWith('"')
                             ? p.slice(1, -1)
@@ -5354,7 +5811,7 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                     for (const entry of mainContentAreaElement.querySelectorAll(
                         "dataset-entry"
                     )) {
-                        entry.checkCategoryRequirementsAndUpdateVisuals();
+                        entry.checkGroupRequirementsAndUpdateVisuals();
                     }
                 }
 
@@ -5362,10 +5819,10 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
             }
 
             function clearWorkspaceForNewProject() {
-                const categoryListContainer =
-                    document.getElementById("tag-category-list");
-                if (categoryListContainer) {
-                    categoryListContainer.innerHTML = "";
+                const groupListContainer =
+                    document.getElementById("tag-group-list");
+                if (groupListContainer) {
+                    groupListContainer.innerHTML = "";
                 }
 
                 if (mainContentAreaElement) {
@@ -5384,7 +5841,7 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                     filterEntries("");
                 }
 
-                opentaggerAPI.deselectAllEntries(true); // This also clears g_lastClickedEntryForShiftSelect
+                opentaggerAPI.deselectAllEntries(true); 
 
                 checkDropHintVisibility();
                 console.log("Workspace cleared for new project.");
@@ -5416,6 +5873,20 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                     document.getElementById("console-output");
                 const consoleTextArea =
                     document.getElementById("console-input");
+
+                globalTagAutocompleteDropdown = document.getElementById('tag-autocomplete-dropdown');
+                if (!globalTagAutocompleteDropdown) {
+                    console.error("AutocompleteDropdown element (#tag-autocomplete-dropdown) not found in DOM!");
+                }
+            
+                loadBooruTags().then(tags => {
+                    if (tags.length > 0) {
+                        console.log("Booru tags ready for autocomplete.");
+                    } else {
+                        console.warn("Booru tags could not be loaded. Tag autocomplete will not be available.");
+                    }
+                });
+
 
                 if (consoleTextArea && typeof CodeMirror !== "undefined") {
                     consoleCodeMirrorInstance = CodeMirror.fromTextArea(
@@ -5585,10 +6056,10 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                         );
                 }
 
-                const categoryListContainer =
-                    document.getElementById("tag-category-list");
-                const addCategoryButton =
-                    document.getElementById("btn-add-category");
+                const groupListContainer =
+                    document.getElementById("tag-group-list");
+                const addGroupButton =
+                    document.getElementById("btn-add-group");
                 const projectFileInput =
                     document.getElementById("project-file-input");
                 const datasetZipInput =
@@ -5736,10 +6207,10 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                                     tags
                                 );
                                 entry.style.display = isMatch ? "" : "none";
-                                if (isMatch && g_parsedSearchTerms.length > 0) {
+                                if (isMatch && globalParsedSearchTerms.length > 0) {
                                     entry.applyTagHighlighting(
-                                        g_parsedSearchTerms,
-                                        g_searchTermColors
+                                        globalParsedSearchTerms,
+                                        globalSearchTermColors
                                     );
                                 } else {
                                     entry.clearTagHighlighting();
@@ -5764,13 +6235,13 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                     checkDropHintVisibility();
                 }
 
-                if (addCategoryButton) {
-                    addCategoryButton.addEventListener("click", () => {
-                        const cat = document.createElement("tag-category");
-                        cat.setAttribute("category-name", "New Cat");
-                        if (categoryListContainer)
-                            categoryListContainer.appendChild(cat);
-                        const span = cat.querySelector(".category-name");
+                if (addGroupButton) {
+                    addGroupButton.addEventListener("click", () => {
+                        const cat = document.createElement("tag-group");
+                        cat.setAttribute("group-name", "New Cat");
+                        if (groupListContainer)
+                            groupListContainer.appendChild(cat);
+                        const span = cat.querySelector(".group-name");
                         if (span) {
                             requestAnimationFrame(() => {
                                 span.focus();
@@ -5913,7 +6384,7 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                                             for (const entry of mainContentAreaElement.querySelectorAll(
                                                 "dataset-entry"
                                             )) {
-                                                entry.checkCategoryRequirementsAndUpdateVisuals();
+                                                entry.checkGroupRequirementsAndUpdateVisuals();
                                             }
                                             console.log(
                                                 "Manually re-checked all entry requirements."
@@ -5932,25 +6403,27 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                     });
                 }
 
-                // Fallback context menu for document background
                 document.addEventListener("contextmenu", (e) => {
                     currentContextMenu?.hide();
 
-                    // If click is inside splash screen, let it handle or prevent default
                     if (splashScreenElement && !splashScreenElement.classList.contains("hidden")) {
                          const onSplash = e.target.closest("#splash-screen");
                          if (!onSplash) {
-                             e.preventDefault(); // Prevent default if right-clicked outside splash
+                             e.preventDefault(); 
                          }
-                         return; // Don't show app context menu if splash is visible
+                         return; 
                     }
 
-                    // If click is on a custom element that handles its own contextmenu, do nothing
-                    if (e.target.closest('dataset-tag, dataset-entry, tag-category')) {
+                    if (e.target.closest('dataset-tag, dataset-entry, tag-group')) {
+                        return;
+                    }
+                    if (globalTagAutocompleteDropdown && globalTagAutocompleteDropdown.contains(e.target)) {
+                        // Allow context menu on the autocomplete dropdown itself if needed (currently not)
+                        // Or prevent default here: e.preventDefault();
                         return;
                     }
 
-                    // If click is on an interactive element, let it handle or prevent default
+
                     const targetTagName = e.target.tagName.toLowerCase();
                     if (
                         e.target.closest('span[contenteditable="true"]') ||
@@ -5961,19 +6434,18 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                                 .getWrapperElement()
                                 .contains(e.target))
                     ) {
-                        return; // Let the browser or CodeMirror handle context menu
+                        return; 
                     }
 
 
-                    // Otherwise, show the general background menu
                     e.preventDefault();
                     e.stopPropagation();
 
                     const generalItems = [
                         {
-                            label: "Add Category",
+                            label: "Add Tags",
                             callback: () =>
-                                addCategoryButton?.click(),
+                                addGroupButton?.click(),
                         },
                         { type: "divider" },
                         {
@@ -5988,7 +6460,7 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                                 for (const entry of mainContentAreaElement.querySelectorAll(
                                     "dataset-entry"
                                 )) {
-                                    entry.checkCategoryRequirementsAndUpdateVisuals();
+                                    entry.checkGroupRequirementsAndUpdateVisuals();
                                 }
                             },
                         },
@@ -6005,13 +6477,13 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                     createContextMenu(generalItems, e);
                 });
 
-                document.addEventListener("category-min-tags-changed", () => {
+                document.addEventListener("group-min-tags-changed", () => {
                     if (!mainContentAreaElement) return;
 
                     for (const entry of mainContentAreaElement.querySelectorAll(
                         "dataset-entry"
                     )) {
-                        entry.checkCategoryRequirementsAndUpdateVisuals();
+                        entry.checkGroupRequirementsAndUpdateVisuals();
                     }
                 });
 
@@ -6050,12 +6522,11 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
 
                                         for (const entry of addedEntries) {
                                             requestAnimationFrame(() =>
-                                                entry.checkCategoryRequirementsAndUpdateVisuals()
+                                                entry.checkGroupRequirementsAndUpdateVisuals()
                                             );
                                         }
-                                        // If the last clicked entry for shift-select was removed, reset it
-                                        if (g_lastClickedEntryForShiftSelect && removedEntries.includes(g_lastClickedEntryForShiftSelect)) {
-                                            g_lastClickedEntryForShiftSelect = null;
+                                        if (globalLastClickedEntryForShiftSelect && removedEntries.includes(globalLastClickedEntryForShiftSelect)) {
+                                            globalLastClickedEntryForShiftSelect = null;
                                         }
                                         break;
                                     }
@@ -6082,7 +6553,7 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                     for (const entry of mainContentAreaElement.querySelectorAll(
                         "dataset-entry"
                     )) {
-                        entry.checkCategoryRequirementsAndUpdateVisuals();
+                        entry.checkGroupRequirementsAndUpdateVisuals();
                     }
                 }
             });
@@ -6091,17 +6562,17 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                 console.log("Starting project save...");
                 showConfirmationModal("Saving project...", []);
 
-                const categories = [];
+                const groups = [];
 
                 for (const catElement of document.querySelectorAll(
-                    "#tag-category-list tag-category"
+                    "#tag-group-list tag-group"
                 )) {
-                    categories.push({
+                    groups.push({
                         name:
-                            catElement.getAttribute("category-name") ||
-                            "Unnamed Category",
+                            catElement.getAttribute("group-name") ||
+                            "Unnamed Group",
                         minimumTags: catElement.minimumTags,
-                        tags: catElement.getCategoryTags(),
+                        tags: catElement.getGroupTags(),
                     });
                 }
 
@@ -6187,7 +6658,7 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
 
                 const projectData = {
                     version: 1,
-                    categories: categories,
+                    groups: groups,
                     entries: entries,
                 };
                 zip.file("project.json", JSON.stringify(projectData, null, 2));
@@ -6380,35 +6851,35 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                     );
                 }
                 if (
-                    !Array.isArray(projectData.categories) ||
+                    !Array.isArray(projectData.groups) ||
                     !Array.isArray(projectData.entries)
                 ) {
                     throw new Error(
-                        "Invalid project data structure (missing categories or entries array)."
+                        "Invalid project data structure (missing groups or entries array)."
                     );
                 }
 
                 clearWorkspaceForNewProject();
 
                 console.log(
-                    `Loading ${projectData.categories.length} categories...`
+                    `Loading ${projectData.groups.length} groups...`
                 );
-                const categoryListContainer =
-                    document.getElementById("tag-category-list");
+                const groupListContainer =
+                    document.getElementById("tag-group-list");
 
-                for (const catData of projectData.categories) {
-                    const categoryElement =
-                        document.createElement("tag-category");
-                    categoryElement.setAttribute(
-                        "category-name",
+                for (const catData of projectData.groups) {
+                    const groupElement =
+                        document.createElement("tag-group");
+                    groupElement.setAttribute(
+                        "group-name",
                         catData.name || "Unnamed"
                     );
 
                     requestAnimationFrame(() => {
-                        categoryElement.minimumTags = catData.minimumTags || 0;
-                        categoryElement.setTags(catData.tags || []);
+                        groupElement.minimumTags = catData.minimumTags || 0;
+                        groupElement.setTags(catData.tags || []);
                     });
-                    categoryListContainer.appendChild(categoryElement);
+                    groupListContainer.appendChild(groupElement);
                 }
 
                 console.log(`Loading ${projectData.entries.length} entries...`);
@@ -6738,7 +7209,7 @@ word-wrap: break-word; /* Use word-wrap for older browsers */
                 let requirementsMet = true;
                 let failingEntriesCount = 0;
                 for (const entry of entriesToCheck) {
-                    if (!entry.checkCategoryRequirements()) {
+                    if (!entry.checkGroupRequirements()) {
                         requirementsMet = false;
                         failingEntriesCount++;
                     }
