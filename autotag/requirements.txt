@@ -12,4 +12,6 @@ transformers
 uvicorn
 fastapi
 python-multipart
-Pillow
+msgspec
+pydantic==2.10.6
+safetensors
