@@ -5,5 +5,12 @@
 # npm packages
 node_modules/
 
+# python-related files
+__pycache__/
+*.pyc
+.venv/
+venv/
+
 # we dont build anything yet but in the future we might
 dist/
+
