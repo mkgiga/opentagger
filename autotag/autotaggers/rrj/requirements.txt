@@ -1,0 +1,7 @@
+torch
+torchvision
+timm
+pillow
+safetensors
+pydantic==2.10.6
+msgspec
