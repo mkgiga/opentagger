@@ -27,9 +27,9 @@ An open-source, user-friendly tool for captioning and tagging images!
 
 ## Todo
 - [ ] Add more tagging models
-      - [x] Danbooru-based tagging
-      - [x] e621-based tagging
-      - [ ] Captions
+  - [x] Danbooru-based tagging
+  - [x] e621-based tagging
+  - [ ] Captions
 - [x] Click to select image entries
 - [x] User-friendly bulk tag editing interface
 - [x] User preferences
