@@ -85,8 +85,8 @@ chmod +x run.sh
 > THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 ## Acknowledgements
-- [SmilingWolf/wd-vit-tagger-v3](https://huggingface.co/SmilingWolf/wd-vit-tagger-v3) Thank you [SmilingWolf](https://huggingface.co/SmilingWolf) for the autotagging model!
-- [wdv3_timm](https://github.com/neggles/wdv3-timm) ...and [neggles](https://github.com/neggles) too for the tagging script!
+- [SmilingWolf/wd-vit-tagger-v3](https://huggingface.co/SmilingWolf/wd-vit-tagger-v3) ViT v3 tagger model
+- [wdv3_timm](https://github.com/neggles/wdv3-timm) Tagger script used by the python microservice
 - [CodeMirror](https://codemirror.net/) for the text editor used in the console.
 - [JSZip](https://stuk.github.io/jszip/) for the zip import/export functionality.
 - [FileSaver.js](https://github.com/eligrey/FileSaver.js) used for saving files.
