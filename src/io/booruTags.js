@@ -11,8 +11,12 @@ export async function loadBooruTags() {
     if (state.booruTagsLoadingPromise) return state.booruTagsLoadingPromise;
 
     console.log("Initiating booru tag loading...");
+    // Relative path so this works under all three loaders:
+    //   - http://localhost:5173 (vite dev)
+    //   - http://localhost:8081 (FastAPI direct serve)
+    //   - file:///path/to/dist/index.html (Electron production)
     state.booruTagsLoadingPromise = fetch(
-        "/assets/csv/danbooru_e621_merged.csv"
+        "assets/csv/danbooru_e621_merged.csv"
     )
         .then((response) => {
             if (!response.ok) {
