@@ -1,0 +1,134 @@
+dataset-tag {
+    display: inline-flex;
+    align-items: center;
+    background-color: #e7f0ff;
+    border: 1px solid #b3d1ff;
+    border-radius: 12px;
+    padding: 3px 8px 3px 10px;
+    margin: 3px;
+    font-size: 0.9em;
+    cursor: grab;
+    user-select: none;
+    transition: background-color 0.2s ease;
+    min-width: 50px;
+    /* For autocomplete positioning context */
+    position: relative;
+}
+
+dataset-tag:active {
+    cursor: grabbing;
+}
+
+dataset-tag span[contenteditable] {
+    outline: none;
+    flex-grow: 1;
+    min-width: 10px;
+    padding-right: 5px;
+}
+dataset-tag span[contenteditable]:focus {
+    background-color: #fff;
+    box-shadow: 0 0 0 1px #b3d1ff;
+}
+
+dataset-tag .delete-tag {
+    font-family: "Material Icons";
+    font-size: 16px;
+    cursor: pointer;
+    color: #aaa;
+    margin-left: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px;
+    border-radius: 50%;
+    border-color: #b3d1ff;
+    line-height: 1;
+}
+
+dataset-tag .delete-tag:hover {
+    color: #ff4d4d;
+    background-color: #ffe0e0;
+}
+
+dataset-entry > .entry-content > tag-list > .add-tag-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    margin: 3px;
+    border: 1px dashed #ccc;
+    border-radius: 12px;
+    cursor: pointer;
+    color: #777;
+    min-width: 26px;
+    width: 26px;
+    height: 26px;
+    box-sizing: border-box;
+    background-color: #f9f9f9;
+    transition: all 0.2s ease;
+}
+
+dataset-entry > .entry-content > tag-list > .add-tag-button:hover {
+    border-color: #5c85d6;
+    color: #5c85d6;
+    background-color: #e7f0ff;
+}
+
+dataset-entry
+    > .entry-content
+    > tag-list
+    > .add-tag-button
+    .material-icons {
+    font-size: 20px;
+    line-height: 1;
+}
+
+dataset-entry > .entry-content > tag-list > .add-tag-input {
+    outline: none;
+    background-color: #fff;
+    border: 1px solid #b3d1ff;
+    box-shadow: 0 0 0 1px #b3d1ff;
+    border-radius: 12px;
+    padding: 3px 8px 3px 10px;
+    margin: 3px;
+    font-size: 0.9em;
+    min-width: 70px;
+    height: 28px;
+    box-sizing: border-box;
+    line-height: normal;
+    vertical-align: middle;
+}
+
+tag-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    padding: 5px;
+    min-height: 30px;
+    border-radius: 4px;
+    transition: background-color 0.2s ease;
+}
+
+tag-list[direction="column"] {
+    flex-direction: column;
+    align-items: flex-start;
+    flex-wrap: nowrap;
+}
+
+tag-list[direction="row"] {
+    flex-direction: row;
+    align-items: center;
+}
+
+.drag-over {
+    background-color: #e0ffe0 !important;
+    border: 1px dashed #8fbc8f;
+}
+dataset-tag.dragging {
+    opacity: 0.5;
+}
+
+dataset-tag.searched-highlight {
+    border: 2px solid var(--highlight-border-color, #ff0000);
+    padding: 2px 7px 2px 9px;
+}

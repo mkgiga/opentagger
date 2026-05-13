@@ -1,0 +1,126 @@
+.main-view {
+    flex-grow: 1;
+    background-color: #fff;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.main-view-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 15px 15px 10px 15px;
+    flex-shrink: 0;
+    border-bottom: 1px solid #eee;
+}
+.main-view-header h2 {
+    margin-bottom: 0;
+    flex-shrink: 0;
+    font-size: 1.1em;
+    color: #555;
+}
+
+#main-content-area {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding: 15px;
+    position: relative;
+}
+
+#main-content-area .drop-hint {
+    text-align: center;
+    color: #aaa;
+    padding: 40px;
+    border: 2px dashed #ddd;
+    border-radius: 5px;
+    margin-bottom: 20px;
+}
+
+#main-content-area .drop-hint.no-results {
+    border-style: solid;
+    color: #888;
+}
+#main-content-area .drop-hint.no-results::before {
+    content: "No entries match your search.";
+    display: block;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+#autotag-all-button {
+    background: none;
+    border: none;
+    border-radius: 8px;
+    padding: 5px;
+    cursor: pointer;
+    font-family: "Material Icons";
+    font-size: 20px;
+    color: #666;
+    line-height: 1;
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+    width: 28px;
+    background: none !important;
+}
+
+#autotag-all-button:hover:not(:disabled) {
+    background-color: #e0e0e0;
+    border-color: #bbb;
+    color: #333;
+}
+#autotag-all-button.loading {
+    color: #5c5cff;
+    animation: spin 1s linear infinite;
+    cursor: default;
+    background: none;
+}
+#autotag-all-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    background-color: #f0f0f0;
+}
+
+#search-bar {
+    padding: 6px 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 0.9em;
+    min-width: 200px;
+    max-width: 400px;
+    flex-grow: 1;
+    margin-left: auto;
+}
+
+#search-bar:focus {
+    outline: none;
+    border-color: #5c85d6;
+    box-shadow: 0 0 0 2px rgba(92, 133, 214, 0.2);
+}
+
+.autotag-timer-label {
+    display: inline-block;
+    background-color: #e9e9e9;
+    border: 1px solid #dcdcdc;
+    border-radius: 10px;
+    padding: 2px 7px;
+    margin-left: 6px;
+    font-size: 0.8em;
+    color: #555;
+    line-height: 1.2;
+    vertical-align: middle;
+    opacity: 1;
+    transition: opacity 0.5s ease-out 1.5s;
+}
+
+.autotag-timer-label.fade-out {
+    opacity: 0;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}

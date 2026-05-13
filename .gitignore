@@ -11,6 +11,6 @@ __pycache__/
 .venv/
 venv/
 
-# we dont build anything yet but in the future we might
+# vite build output
 dist/
 

@@ -1,0 +1,170 @@
+dataset-entry img,
+dataset-entry span:not([contenteditable]),
+dataset-entry button {
+    user-select: none;
+}
+
+dataset-entry {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    margin-bottom: 15px;
+    padding: 10px;
+    background-color: #fdfdfd;
+    transition: box-shadow 0.2s ease, border-color 0.3s ease;
+    position: relative;
+    /* For selection clicks */
+    cursor: default;
+}
+
+dataset-entry.requirement-not-met {
+    border-color: #ff7b7b;
+    box-shadow: 0 0 5px rgba(255, 100, 100, 0.5);
+}
+
+dataset-entry[selected] {
+    border-color: #5c85d6;
+    background-color: #e7f0ff;
+    box-shadow: 0 0 8px rgba(92, 133, 214, 0.5);
+}
+
+dataset-entry[selected]::before {
+    content: "check_circle";
+    font-family: "Material Icons";
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    font-size: 22px;
+    color: #4a6aaa;
+    background-color: rgba(255, 255, 255, 0.8);
+    border-radius: 50%;
+    padding: 2px;
+    z-index: 2;
+    pointer-events: none;
+}
+
+/* Higher-specificity reset: when a selected entry also fails its
+   requirements, suppress the warning ::after so the check_circle owns
+   the corner instead of double-stacking icons. */
+dataset-entry[selected].requirement-not-met::after {
+}
+
+dataset-entry.requirement-not-met::after {
+    content: "warning";
+    font-family: "Material Icons";
+    position: absolute;
+    top: 5px;
+    right: 76px;
+    color: #ff4d4d;
+    font-size: 20px;
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: 50%;
+    padding: 4px;
+    pointer-events: none;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+}
+
+dataset-entry:hover {
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+dataset-entry .entry-content {
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+    align-items: flex-start;
+}
+
+dataset-entry img {
+    max-width: 150px;
+    max-height: 150px;
+    height: auto;
+    object-fit: contain;
+    border-radius: 3px;
+    flex-shrink: 0;
+    cursor: pointer;
+}
+
+dataset-entry tag-list {
+    flex-grow: 1;
+    border: 1px solid #eee;
+    align-self: stretch;
+}
+
+dataset-entry .entry-buttons {
+    position: absolute;
+    top: 5px;
+    right: 38px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    z-index: 1;
+}
+
+dataset-entry .autotag-entry {
+    background: rgba(255, 255, 255, 0.7);
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    color: #aaa;
+    font-family: "Material Icons";
+    font-size: 20px;
+    padding: 4px;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+dataset-entry .delete-entry {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: rgba(255, 255, 255, 0.7);
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    color: #aaa;
+    font-family: "Material Icons";
+    font-size: 20px;
+    padding: 4px;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    z-index: 1;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+dataset-entry .delete-entry:hover {
+    background-color: #ffe0e0;
+    color: #ff4d4d;
+}
+
+dataset-entry .autotag-entry:hover:not(:disabled) {
+    background-color: #e0e0ff;
+    color: #5c5cff;
+}
+dataset-entry .autotag-entry.loading {
+    color: #5c5cff;
+    animation: spin 1s linear infinite;
+}
+dataset-entry .autotag-entry.loading:hover {
+    background-color: rgba(255, 255, 255, 0.7);
+}
+dataset-entry .autotag-entry:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background-color: rgba(230, 230, 230, 0.7);
+}

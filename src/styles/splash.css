@@ -1,0 +1,195 @@
+#splash-screen {
+    position: fixed;
+    top: var(--menu-bar-height);
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--splash-ide-bg);
+    z-index: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    transition: opacity 0.4s ease-out, visibility 0.4s ease-out;
+}
+
+#splash-screen.hidden {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+.splash-ide-container {
+    width: 90vw;
+    max-width: 1050px;
+    height: auto;
+    max-height: calc(100vh - var(--menu-bar-height) - 40px);
+    background-color: var(--splash-ide-content-bg);
+    border: 1px solid var(--splash-ide-border);
+    border-radius: 6px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.splash-ide-header {
+    padding: 25px 35px 15px 35px;
+    border-bottom: 1px solid var(--splash-ide-border);
+}
+.splash-ide-header h1 {
+    font-size: 2em;
+    font-weight: 600;
+    color: var(--splash-ide-text-primary);
+    margin-bottom: 2px;
+}
+.splash-ide-header p {
+    font-size: 0.95em;
+    color: var(--splash-ide-text-secondary);
+}
+
+.splash-ide-content-area {
+    display: flex;
+    flex-grow: 1;
+    padding: 25px 35px;
+    gap: 35px;
+    overflow-y: auto;
+}
+
+.splash-ide-column {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+    min-width: 0;
+}
+.splash-ide-column:first-child {
+    flex-basis: 55%;
+}
+.splash-ide-column:last-child {
+    flex-basis: 45%;
+}
+
+.splash-ide-section h2 {
+    font-size: 1.05em;
+    font-weight: 500;
+    color: var(--splash-ide-text-secondary);
+    margin-bottom: 12px;
+}
+
+.splash-ide-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.splash-ide-list li button,
+.splash-ide-list li a.splash-ide-info-item,
+.splash-ide-list li div.splash-ide-info-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 10px;
+    border-radius: 4px;
+    background: none;
+    border: none;
+    text-align: left;
+    cursor: pointer;
+    width: 100%;
+    color: var(--splash-ide-text-primary);
+    font-size: 0.9em;
+    transition: background-color 0.15s ease-in-out;
+    text-decoration: none;
+}
+.splash-ide-list li button:hover,
+.splash-ide-list li a.splash-ide-info-item:hover {
+    background-color: var(--splash-ide-hover-bg);
+    color: var(--splash-ide-accent);
+}
+.splash-ide-list li button:hover .material-icons,
+.splash-ide-list li a.splash-ide-info-item:hover .material-icons {
+    color: var(--splash-ide-accent);
+}
+
+.splash-ide-list li button .material-icons,
+.splash-ide-list li .splash-ide-info-item .material-icons {
+    color: var(--splash-ide-accent);
+    font-size: 22px;
+    flex-shrink: 0;
+}
+.splash-ide-list li button span:last-of-type,
+.splash-ide-list li .splash-ide-info-item div {
+    flex-grow: 1;
+    line-height: 1.4;
+}
+
+.splash-ide-info-item div h4 {
+    margin: 0 0 2px 0;
+    font-size: 0.9em;
+    font-weight: 500;
+    color: var(--splash-ide-text-primary);
+}
+.splash-ide-info-item div p {
+    margin: 0;
+    font-size: 0.82em;
+    color: var(--splash-ide-text-secondary);
+    line-height: 1.45;
+}
+
+.splash-ide-list.large-icons
+    li
+    .splash-ide-info-item
+    .material-icons {
+    font-size: 26px;
+    background-color: var(--splash-ide-hover-bg);
+    padding: 6px;
+    border-radius: 4px;
+    margin-right: 4px;
+}
+.splash-ide-list.large-icons
+    li
+    a.splash-ide-info-item:hover
+    .material-icons,
+.splash-ide-list.large-icons
+    li
+    div.splash-ide-info-item
+    .material-icons {
+    color: var(--splash-ide-accent);
+}
+
+.splash-ide-list-placeholder {
+    display: flex !important;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 10px !important;
+    color: #777;
+    font-size: 0.85em !important;
+    border: 1px dashed #ddd;
+    border-radius: 4px;
+    background-color: transparent;
+    cursor: default !important;
+}
+.splash-ide-list-placeholder:hover {
+    background-color: transparent !important;
+}
+.splash-ide-list-placeholder .material-icons {
+    color: #777 !important;
+    font-size: 20px !important;
+}
+
+.splash-anim {
+    opacity: 0;
+    transform: translateY(15px);
+    animation: splash-item-fade-in 0.5s
+        cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+@keyframes splash-item-fade-in {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

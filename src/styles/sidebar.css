@@ -1,0 +1,37 @@
+.sidebar {
+    min-width: 250px;
+    width: 20svw;
+    background-color: #f8f8f8;
+    border-right: 1px solid #ccc;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    flex-shrink: 0;
+}
+
+.sidebar h2 {
+    margin-bottom: 15px;
+    font-size: 1.1em;
+    color: #555;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 5px;
+}
+
+#tag-group-list {
+    flex-grow: 1;
+    margin-bottom: 10px;
+}
+
+#btn-add-group {
+    padding: 8px;
+    background-color: #5c85d6;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-top: auto;
+}
+#btn-add-group:hover {
+    background-color: #4a6aaa;
+}

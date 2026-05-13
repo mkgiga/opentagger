@@ -1,0 +1,88 @@
+#developer-console {
+    background-color: #f7f7f7;
+    color: #333;
+    border-top: 1px solid #ccc;
+    display: flex;
+    flex-direction: column;
+    z-index: 50;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-in-out;
+    flex-shrink: 0;
+}
+
+#developer-console.visible {
+}
+
+#console-output {
+    flex-grow: 1;
+    padding: 8px;
+    overflow-y: auto;
+    font-family: "Consolas", "Monaco", monospace;
+    font-size: 0.85em;
+    line-height: 1.5;
+    min-height: 2em;
+}
+
+#console-output .console-message {
+    padding: 3px 5px;
+    border-bottom: 1px solid #e8e8e8;
+    word-break: break-all;
+}
+#console-output .console-message:nth-child(even) {
+    background-color: #efefef;
+}
+#console-output .console-message:last-child {
+    border-bottom: none;
+}
+
+#console-output .console-message.command {
+    color: #005cbb;
+    font-weight: bold;
+}
+#console-output .console-message.error {
+    color: #c00;
+}
+#console-output .console-message.success {
+    color: #007700;
+}
+#console-output .console-message.info {
+    color: #555;
+}
+#console-output .console-message pre {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    margin: 0;
+    font-family: inherit;
+}
+
+.CodeMirror {
+    border-top: 1px solid #ccc;
+    font-family: "Consolas", "Monaco", monospace;
+    font-size: 0.9em;
+    height: auto;
+    min-height: 2.5em;
+    max-height: 15em;
+}
+.CodeMirror-scroll {
+    min-height: 2.5em;
+}
+.CodeMirror-hints {
+    position: absolute;
+    background: #fff;
+    border: 1px solid #ddd;
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
+    /* Ensure it's above CodeMirror itself */
+    z-index: 101;
+    max-height: 10em;
+    overflow-y: auto;
+}
+.CodeMirror-hint {
+    color: #333;
+    padding: 2px 5px;
+}
+li.CodeMirror-hint-active {
+    background: #e7f0ff;
+    color: #005cbb;
+}

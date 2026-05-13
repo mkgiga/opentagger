@@ -1,0 +1,95 @@
+tag-group {
+    display: block;
+    margin-bottom: 15px;
+    border: 1px solid #e0e0e0;
+    padding: 10px;
+    border-radius: 4px;
+    background-color: #fff;
+    position: relative;
+}
+
+tag-group .group-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    cursor: default;
+    gap: 5px;
+}
+
+tag-group .group-name {
+    font-weight: bold;
+    color: #666;
+    padding: 3px 5px;
+    border-radius: 3px;
+    cursor: text;
+    outline: none;
+    flex-grow: 1;
+    min-width: 50px;
+    margin-right: 5px;
+}
+tag-group .group-name:hover {
+    background-color: #f0f0f0;
+}
+tag-group .group-name:focus {
+    background-color: #e7f0ff;
+    box-shadow: 0 0 0 1px #b3d1ff;
+}
+
+tag-group .min-tags-control {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    color: #777;
+    font-size: 0.85em;
+    margin-left: auto;
+    flex-shrink: 0;
+}
+tag-group .min-tags-control button {
+    font-family: "Material Icons";
+    font-size: 18px;
+    cursor: pointer;
+    color: #999;
+    padding: 0;
+    border: none;
+    background: none;
+    line-height: 1;
+    width: 18px;
+    height: 18px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 3px;
+}
+tag-group .min-tags-control button:hover {
+    background-color: #eee;
+    color: #333;
+}
+tag-group .min-tags-value {
+    min-width: 15px;
+    text-align: center;
+    font-weight: bold;
+}
+
+tag-group .btn-new-tag {
+    font-family: "Material Icons";
+    font-size: 20px;
+    cursor: pointer;
+    color: #5c85d6;
+    padding: 2px;
+    border-radius: 50%;
+    background: none;
+    border: none;
+    flex-shrink: 0;
+}
+
+tag-group .btn-new-tag:hover {
+    background-color: #e7f0ff;
+    color: #4a6aaa;
+}
+
+tag-group tag-list {
+    min-height: 40px;
+    padding-bottom: 10px;
+    position: relative;
+}

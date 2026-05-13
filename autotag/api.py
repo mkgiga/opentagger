@@ -52,8 +52,22 @@ except Exception as e: # Catch other potential errors during rrj.py import (e.g.
     rrj_device_info = f"Error during init: {e}"
 
 # --- Frontend HTML Path ---
-FRONTEND_HTML_FILENAME = "tagger.html"
-FRONTEND_HTML_PATH = (API_SCRIPT_DIR.parent / FRONTEND_HTML_FILENAME).resolve()
+# We prefer the Vite build output. The raw src/ index.html references
+# /src/main.js which only the Vite dev server knows how to serve, so we
+# don't fall back to it from FastAPI — instead we drop back to the
+# legacy monolithic tagger.html for users who haven't built yet.
+PROJECT_ROOT = API_SCRIPT_DIR.parent
+_FRONTEND_CANDIDATES = [
+    PROJECT_ROOT / "dist" / "index.html",
+    PROJECT_ROOT / "tagger.html",
+]
+
+def _resolve_frontend_path() -> pathlib.Path:
+    for candidate in _FRONTEND_CANDIDATES:
+        if candidate.is_file():
+            return candidate.resolve()
+    # Fall back to the legacy path so error messages still point somewhere sensible.
+    return (PROJECT_ROOT / "tagger.html").resolve()
 
 DEFAULT_SERVER_HOST = "127.0.0.1"
 DEFAULT_SERVER_PORT = 8081
@@ -226,28 +240,39 @@ async def autotag_rrj_endpoint(
         logger.error(f"RRJ: An unexpected error occurred: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="RRJ: Internal Server Error during tagging")
 
-# --- Root Endpoint to Serve tagger.html ---
+# --- Root Endpoint to Serve the frontend ---
 @app.get("/")
 async def serve_tagger_html():
-    if not FRONTEND_HTML_PATH.is_file():
-        logger.error(f"Frontend '{FRONTEND_HTML_PATH.name}' not found at: {FRONTEND_HTML_PATH}")
-        raise HTTPException(status_code=404, detail=f"'{FRONTEND_HTML_PATH.name}' not found. Expected at: {FRONTEND_HTML_PATH}")
-    logger.info(f"Serving '{FRONTEND_HTML_PATH.name}' from: {FRONTEND_HTML_PATH}")
-    return FileResponse(FRONTEND_HTML_PATH, media_type="text/html")
+    # Re-resolve on each request so a fresh `npm run build` is picked up
+    # without restarting the server.
+    frontend_path = _resolve_frontend_path()
+    if not frontend_path.is_file():
+        logger.error(f"Frontend not found. Looked for: {[str(p) for p in _FRONTEND_CANDIDATES]}")
+        raise HTTPException(status_code=404, detail=f"Frontend not found. Looked for: {[str(p) for p in _FRONTEND_CANDIDATES]}")
+    logger.info(f"Serving '{frontend_path.name}' from: {frontend_path}")
+    return FileResponse(frontend_path, media_type="text/html")
 
 # --- Static File Serving ---
+# Assets used to live at <project>/assets/. After the Vite migration they
+# live at <project>/public/assets/ so Vite can serve them in dev and copy
+# them into dist/ on build. Both locations are checked for compatibility.
+_ASSET_DIRS = [
+    PROJECT_ROOT / "public" / "assets",
+    PROJECT_ROOT / "dist" / "assets",
+    PROJECT_ROOT / "assets",
+]
+
 @app.get("/assets/{file_path:path}")
 async def serve_static_files(file_path):
-    static_dir = API_SCRIPT_DIR.parent / "assets"
-    file_path = pathlib.Path(file_path)
-    full_path = static_dir / file_path
+    rel_path = pathlib.Path(file_path)
+    for static_dir in _ASSET_DIRS:
+        full_path = static_dir / rel_path
+        if full_path.is_file():
+            logger.info(f"Serving static file: {full_path}")
+            return FileResponse(full_path, media_type="application/octet-stream")
 
-    if not full_path.is_file():
-        logger.error(f"Static file '{file_path}' not found in assets directory: {full_path}")
-        raise HTTPException(status_code=404, detail=f"File '{file_path}' not found in assets directory.")
-
-    logger.info(f"Serving static file: {full_path}")
-    return FileResponse(full_path, media_type="application/octet-stream")
+    logger.error(f"Static file '{file_path}' not found in any of: {[str(d) for d in _ASSET_DIRS]}")
+    raise HTTPException(status_code=404, detail=f"File '{file_path}' not found in assets directory.")
 
 # --- Freakin' Awesome Warning Banner Function --- (Keep as is)
 def print_warning_banner():
@@ -305,10 +330,11 @@ def serve_api(host=DEFAULT_SERVER_HOST, port=DEFAULT_SERVER_PORT):
     else:
         logger.warning("RedRocket Joint Tagger FAILED to initialize. The /autotag/redrocket-joint-tagger endpoint will NOT work.")
 
-    if FRONTEND_HTML_PATH.is_file():
-        logger.info(f"Serving frontend '{FRONTEND_HTML_PATH.name}' from {FRONTEND_HTML_PATH} at '/' path.")
+    frontend_path = _resolve_frontend_path()
+    if frontend_path.is_file():
+        logger.info(f"Serving frontend '{frontend_path.name}' from {frontend_path} at '/' path.")
     else:
-        logger.warning(f"Frontend '{FRONTEND_HTML_PATH.name}' not found at {FRONTEND_HTML_PATH}. The '/' path will return a 404 error.")
+        logger.warning(f"Frontend not found in any of: {[str(p) for p in _FRONTEND_CANDIDATES]}. The '/' path will return a 404 error.")
 
     app.state.server_host = host
     app.state.server_port = port

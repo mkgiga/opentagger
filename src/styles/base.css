@@ -1,0 +1,70 @@
+:root {
+    --menu-bar-height: 28px;
+    --splash-ide-bg: #f3f3f3;
+    --splash-ide-content-bg: #fcfcfc;
+    --splash-ide-text-primary: #222222;
+    --splash-ide-text-secondary: #555555;
+    --splash-ide-accent: #007acc;
+    --splash-ide-border: #dcdcdc;
+    --splash-ide-hover-bg: rgba(0, 122, 204, 0.08);
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+        Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji",
+        "Segoe UI Emoji", "Segoe UI Symbol";
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+    background-color: #f0f0f0;
+    color: #333;
+}
+
+#menu-bar {
+    background-color: #e0e0e0;
+    padding: 2px 5px;
+    border-bottom: 1px solid #ccc;
+    flex-shrink: 0;
+    height: var(--menu-bar-height);
+    display: flex;
+    align-items: center;
+}
+
+#menu-bar button {
+    background: none;
+    border: none;
+    padding: 4px 8px;
+    cursor: pointer;
+    font-size: 0.85em;
+}
+
+#menu-bar button:hover {
+    background-color: #d0d0d0;
+}
+
+#app {
+    display: flex;
+    flex-grow: 1;
+    overflow: hidden;
+    height: calc(100vh - var(--menu-bar-height));
+}
+
+#tagging-panel {
+    flex-direction: row;
+    flex-grow: 1;
+    overflow: hidden;
+    height: 100%;
+}
+
+#preferences-panel {
+    padding: 20px;
+    overflow-y: auto;
+    height: 100%;
+}
