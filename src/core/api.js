@@ -9,7 +9,8 @@
 import { state } from "./state.js";
 import { evaluateExpression } from "./search.js";
 import { parseFunctionSignature } from "../utils/text.js";
-import { filterEntries, logToConsole } from "../app.js";
+import { filterEntries } from "../ui/search.js";
+import { logToConsole } from "../ui/devConsole.js";
 import { slashCommands } from "./slashCommands.js";
 
 export const opentaggerAPI = {
