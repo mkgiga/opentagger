@@ -5,8 +5,8 @@
 // components and core systems get extracted, they will be imported
 // here and the inline block will shrink toward zero.
 
-// Vendor libraries first — the legacy inline script reads them off
-// window, so they need to be assigned before that script runs.
+// Vendor libraries first — app.js reads JSZip, saveAs, CodeMirror
+// off window, so they need to be assigned before app.js runs.
 import "./vendor.js";
 
 // Stylesheets are imported in roughly the same order they appeared in
@@ -24,3 +24,7 @@ import "./styles/autocomplete.css";
 import "./styles/tag-group.css";
 import "./styles/menu.css";
 import "./styles/modal.css";
+
+// App body. Currently a single monolithic module — components and
+// core systems will get peeled out into their own files from here.
+import "./app.js";
