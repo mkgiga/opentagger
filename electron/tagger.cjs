@@ -311,6 +311,13 @@ async function getSession(modelId, spec, progress) {
 
     const entry = { session, vocabulary: loadVocabulary(modelId, spec) };
     sessions.set(modelId, entry);
+    // Terminal event so the renderer's progress bar doesn't stay
+    // stuck on the "Loading…" message.
+    progress({
+        phase: "done",
+        message: `${spec.label} loaded.`,
+        percent: null,
+    });
     return entry;
 }
 
@@ -383,6 +390,12 @@ async function runAutotag(modelId, pixels, progress, options = {}) {
         return { success: true, tags: matched.map((t) => t.name) };
     } catch (err) {
         console.error("[opentagger] Autotag inference failed:", err);
+        // Terminal event in case a "load" progress message is showing.
+        progress({
+            phase: "error",
+            message: `Autotagging failed: ${err.message}`,
+            percent: null,
+        });
         return { success: false, error: err.message };
     }
 }

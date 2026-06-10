@@ -383,19 +383,26 @@ class DatasetEntry extends HTMLElement {
             );
         }
 
-        if (autotagButton.disabled) {
+        // A disabled button only blocks user-initiated runs — the
+        // batch flow disables all entry buttons while it works and
+        // calls us silently. Double-runs on the same entry are
+        // prevented by the in-flight flag instead.
+        if (this._autotagInFlight || (!silent && autotagButton.disabled)) {
             if (!silent) {
                 console.warn(
-                    `Autotag for ${this.originalImageName} skipped as button is disabled.`
+                    `Autotag for ${this.originalImageName} skipped (already running or disabled).`
                 );
             }
             return {
                 success: false,
-                message: "Autotag action disabled.",
+                message: this._autotagInFlight
+                    ? "Autotag already in progress for this entry."
+                    : "Autotag action disabled.",
                 tagsAddedCount: 0,
                 elapsedTime: 0,
             };
         }
+        this._autotagInFlight = true;
 
         let timer = null;
         let timerLabel = null;
@@ -491,6 +498,7 @@ class DatasetEntry extends HTMLElement {
                 elapsedTime: 0,
             };
         } finally {
+            this._autotagInFlight = false;
             if (timer) {
                 operationResult.elapsedTime = timer.stop();
             }
