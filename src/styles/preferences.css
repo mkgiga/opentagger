@@ -1,4 +1,7 @@
 .preferences-scope-switcher {
+    /* Full first row of the panel's wrapping flex layout, so the
+       section cards flow side by side below it. */
+    flex-basis: 100%;
     display: flex;
     align-items: center;
     gap: 6px;

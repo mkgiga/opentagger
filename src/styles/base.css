@@ -66,8 +66,14 @@ body {
     height: 100%;
 }
 
+/* The tab-container displays the active panel as a flex row, which
+   lays the top-level preference sections out side by side. */
 #preferences-panel {
     padding: 20px;
     overflow-y: auto;
     height: 100%;
+    flex-wrap: wrap;
+    align-content: flex-start;
+    align-items: flex-start;
+    column-gap: 20px;
 }
