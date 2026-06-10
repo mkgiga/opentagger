@@ -9,7 +9,66 @@ import { state } from "../core/state.js";
 import { createTimerLabelElement } from "../utils/dom.js";
 import { startTimer } from "../utils/timing.js";
 import { showConfirmationModal } from "../ui/modal.js";
-import { ensureAutotagReady } from "./autotagSetup.js";
+
+export const BACKEND_UNAVAILABLE_MESSAGE =
+    "Autotagging is unavailable: the autotag backend is not running.\n\n" +
+    "Autotagging needs a local Python server (autotag/api.py) listening " +
+    "on localhost:8081. To set it up, run run.ps1 (Windows) or run.sh " +
+    "(Linux/macOS) from the opentagger folder once — it creates a Python " +
+    "virtual environment, installs the dependencies, and starts the " +
+    "server. Once the venv exists, the desktop app starts the backend " +
+    "automatically on launch.";
+
+/**
+ * Single quick probe of the backend /health endpoint. Returns the
+ * health JSON when the backend is up, or null when it is unreachable.
+ */
+export async function probeBackend(timeoutMs = 2500) {
+    try {
+        const response = await fetch(state.HEALTH_CHECK_URL, {
+            signal: AbortSignal.timeout(timeoutMs),
+        });
+        if (!response.ok) return null;
+        return await response.json();
+    } catch {
+        return null;
+    }
+}
+
+export async function checkBackendReady(maxRetries = 30, delay = 1000) {
+    console.log(
+        `Checking backend readiness at ${state.HEALTH_CHECK_URL}...`
+    );
+    for (let i = 0; i < maxRetries; i++) {
+        try {
+            const response = await fetch(state.HEALTH_CHECK_URL);
+            if (response.ok) {
+                const data = await response.json();
+                console.log("Python backend is ready:", data);
+                return true;
+            } else {
+                console.warn(
+                    `Backend health check failed with status ${
+                        response.status
+                    }. Attempt ${i + 1}/${maxRetries}.`
+                );
+            }
+        } catch (err) {
+            console.warn(
+                `Backend not ready yet (attempt ${
+                    i + 1
+                }/${maxRetries}): ${err.message}. Retrying in ${
+                    delay / 1000
+                }s...`
+            );
+        }
+        await new Promise((resolve) => setTimeout(resolve, delay));
+    }
+    console.error(
+        "Python backend did not become ready after multiple retries."
+    );
+    return false;
+}
 
 export async function handleAutotagAllClick() {
     if (
@@ -33,8 +92,10 @@ export async function handleAutotagAllClick() {
     }
 
     // Pre-flight: don't start a batch run against a dead backend.
-    // This also walks the user through first-run setup if needed.
-    if (!(await ensureAutotagReady())) {
+    if ((await probeBackend()) === null) {
+        showConfirmationModal(BACKEND_UNAVAILABLE_MESSAGE, [
+            { text: "OK" },
+        ]);
         return;
     }
 

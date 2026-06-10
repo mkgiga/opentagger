@@ -25,7 +25,6 @@ import {
 
 import { loadBooruTags } from "./io/booruTags.js";
 import { handleAutotagAllClick } from "./io/autotag.js";
-import { initAutotagSetup } from "./io/autotagSetup.js";
 import { saveProject, handleProjectFileSelect } from "./io/project.js";
 import {
     handleDatasetZipSelect,
@@ -47,8 +46,6 @@ import "./components/TagGroup.js";
 document.addEventListener("DOMContentLoaded", () => {
     state.appContainer = document.getElementById("app"); // the <tab-container>
     state.splashScreenElement = document.getElementById("splash-screen");
-
-    initAutotagSetup();
 
     // These live inside the "tagging" tab and may be null until that
     // tab is active.

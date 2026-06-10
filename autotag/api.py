@@ -87,15 +87,12 @@ async def lifespan(app_instance: FastAPI):
     else:
         logger.warning("RedRocket Joint Tagger is NOT available due to import/init errors. Check logs.")
     
-    # When Electron spawns us as a sidecar it sets OPENTAGGER_NO_BROWSER;
-    # the app window is the UI, so don't pop a browser tab.
-    if os.environ.get("OPENTAGGER_NO_BROWSER") != "1":
-        logger.info(f"Attempting to open browser at: {url}")
-        try:
-            webbrowser.open_new_tab(url)
-        except Exception as e:
-            logger.error(f"Could not open browser automatically: {e}")
-            logger.info(f"Please manually navigate to: {url}")
+    logger.info(f"Attempting to open browser at: {url}")
+    try:
+        webbrowser.open_new_tab(url)
+    except Exception as e:
+        logger.error(f"Could not open browser automatically: {e}")
+        logger.info(f"Please manually navigate to: {url}")
     
     yield
     
