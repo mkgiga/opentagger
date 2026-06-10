@@ -31,7 +31,7 @@ const {
 } = require("node:fs");
 const { join } = require("node:path");
 const { pipeline } = require("node:stream/promises");
-const { Readable } = require("node:stream");
+const { Readable, Transform } = require("node:stream");
 
 // Model registry.
 //
@@ -102,7 +102,7 @@ const KAOMOJI = new Set([
 ]);
 
 const sessions = new Map(); // modelId -> { session, vocabulary }
-let downloadPromise = null;
+const downloads = new Map(); // modelId -> in-flight download Promise
 
 function modelDir(modelId) {
     return join(app.getPath("userData"), "models", modelId);
@@ -116,7 +116,7 @@ function getStatus(modelId) {
     return {
         supported: Boolean(spec),
         downloaded: Boolean(spec) && existsSync(completeFlagPath(modelId)),
-        downloading: Boolean(downloadPromise),
+        downloading: downloads.has(modelId),
         approxDownloadMB: spec ? spec.approxDownloadMB : 0,
         label: spec ? spec.label : modelId,
         input: spec ? spec.input : null,
@@ -130,25 +130,35 @@ async function downloadFile(url, destPath, label, progress) {
     }
     const total = Number(response.headers.get("content-length")) || 0;
     let received = 0;
-    const body = Readable.fromWeb(response.body);
-    body.on("data", (chunk) => {
-        received += chunk.length;
-        if (total) {
-            progress({
-                phase: "download",
-                message: `Downloading ${label} (${(received / 1048576).toFixed(0)} / ${(total / 1048576).toFixed(0)} MB)…`,
-                percent: Math.round((received / total) * 100),
-            });
-        }
+    // Progress is counted INSIDE the pipeline. Do not attach a `data`
+    // listener to the body alongside pipeline() — two consumers on one
+    // stream wrote chunks out of order under Electron, corrupting the
+    // file while keeping its size correct.
+    const counter = new Transform({
+        transform(chunk, _encoding, callback) {
+            received += chunk.length;
+            if (total) {
+                progress({
+                    phase: "download",
+                    message: `Downloading ${label} (${(received / 1048576).toFixed(0)} / ${(total / 1048576).toFixed(0)} MB)…`,
+                    percent: Math.round((received / total) * 100),
+                });
+            }
+            callback(null, chunk);
+        },
     });
-    await pipeline(body, createWriteStream(destPath));
+    await pipeline(
+        Readable.fromWeb(response.body),
+        counter,
+        createWriteStream(destPath)
+    );
 }
 
 // Downloads all files for a model. The completion flag is written only
 // after every file finished, so a crash/quit mid-download leaves no
 // flag and the next attempt starts clean.
 function downloadModel(modelId, progress) {
-    if (downloadPromise) return downloadPromise;
+    if (downloads.has(modelId)) return downloads.get(modelId);
     const spec = MODELS[modelId];
     if (!spec) {
         return Promise.resolve({
@@ -156,7 +166,7 @@ function downloadModel(modelId, progress) {
             error: `Model "${modelId}" has no ONNX build available.`,
         });
     }
-    downloadPromise = (async () => {
+    const downloadPromise = (async () => {
         try {
             const dir = modelDir(modelId);
             if (existsSync(dir) && !existsSync(completeFlagPath(modelId))) {
@@ -194,9 +204,10 @@ function downloadModel(modelId, progress) {
             });
             return { success: false, error: err.message };
         } finally {
-            downloadPromise = null;
+            downloads.delete(modelId);
         }
     })();
+    downloads.set(modelId, downloadPromise);
     return downloadPromise;
 }
 
@@ -275,9 +286,27 @@ async function getSession(modelId, spec, progress) {
         console.warn(
             `[opentagger] EPs [${providers.join(", ")}] failed (${err.message}); falling back to CPU.`
         );
-        session = await ort.InferenceSession.create(modelPath, {
-            executionProviders: ["cpu"],
-        });
+        try {
+            session = await ort.InferenceSession.create(modelPath, {
+                executionProviders: ["cpu"],
+            });
+        } catch (cpuErr) {
+            if (/protobuf parsing failed|load model/i.test(cpuErr.message)) {
+                // The file on disk is unreadable as a model — wipe it
+                // so the next attempt re-downloads instead of failing
+                // forever.
+                rmSync(modelDir(modelId), {
+                    recursive: true,
+                    force: true,
+                });
+                throw new Error(
+                    `The downloaded ${spec.label} model file was corrupted ` +
+                        "and has been removed. Click an autotag button " +
+                        "to download it again."
+                );
+            }
+            throw cpuErr;
+        }
     }
 
     const entry = { session, vocabulary: loadVocabulary(modelId, spec) };
