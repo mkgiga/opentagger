@@ -11,7 +11,7 @@ import {
     showConfirmationModal,
     showImagePreviewModal,
 } from "../ui/modal.js";
-import { BACKEND_UNAVAILABLE_MESSAGE } from "../io/autotag.js";
+import { ensureAutotagReady } from "../io/autotagSetup.js";
 
 class DatasetEntry extends HTMLElement {
     constructor() {
@@ -357,6 +357,7 @@ class DatasetEntry extends HTMLElement {
     }
     async _handleAutotagClick(e) {
         e.stopPropagation();
+        if (!(await ensureAutotagReady())) return;
         await this.triggerAutotag(false);
     }
     async triggerAutotag(silent = false) {
@@ -542,11 +543,6 @@ class DatasetEntry extends HTMLElement {
                 tagsAddedCount: 0,
                 elapsedTime: 0,
             };
-            if (backendDown && !silent) {
-                showConfirmationModal(BACKEND_UNAVAILABLE_MESSAGE, [
-                    { text: "OK" },
-                ]);
-            }
         } finally {
             if (timer) {
                 operationResult.elapsedTime = timer.stop();
