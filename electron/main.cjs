@@ -15,10 +15,9 @@
 // first request, never at startup.
 
 const { app, BrowserWindow, shell, ipcMain } = require("electron");
-const { existsSync, mkdirSync, readdirSync, renameSync } = require("node:fs");
 const { join } = require("node:path");
 const tagger = require("./tagger.cjs");
-const { storage, modelsDir } = require("./storage.cjs");
+const { storage } = require("./storage.cjs");
 
 // ELECTRON_DEV is set by the `npm run electron:dev` script. In
 // packaged builds app.isPackaged is true anyway, but the env var is
@@ -60,32 +59,6 @@ function registerIpcHandlers() {
     );
 }
 
-// Earlier versions stored models in Electron's userData dir; move
-// anything found there into ~/.opentagger/models once.
-function migrateLegacyModels() {
-    const legacyDir = join(app.getPath("userData"), "models");
-    if (!existsSync(legacyDir)) return;
-    mkdirSync(modelsDir, { recursive: true });
-    for (const entry of readdirSync(legacyDir, {
-        withFileTypes: true,
-    })) {
-        if (!entry.isDirectory()) continue;
-        const dest = join(modelsDir, entry.name);
-        if (existsSync(dest)) continue;
-        try {
-            renameSync(join(legacyDir, entry.name), dest);
-            console.log(
-                `[opentagger] Migrated model "${entry.name}" to ${dest}`
-            );
-        } catch (err) {
-            // Worst case the model re-downloads on next use.
-            console.warn(
-                `[opentagger] Could not migrate model "${entry.name}": ${err.message}`
-            );
-        }
-    }
-}
-
 function createWindow() {
     mainWindow = new BrowserWindow({
         width: 1400,
@@ -119,7 +92,6 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
-    migrateLegacyModels();
     registerIpcHandlers();
     createWindow();
 

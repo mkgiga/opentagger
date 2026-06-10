@@ -253,13 +253,11 @@ async def serve_tagger_html():
     return FileResponse(frontend_path, media_type="text/html")
 
 # --- Static File Serving ---
-# Assets used to live at <project>/assets/. After the Vite migration they
-# live at <project>/public/assets/ so Vite can serve them in dev and copy
-# them into dist/ on build. Both locations are checked for compatibility.
+# Assets live at <project>/public/assets/ (source) and are copied into
+# dist/assets/ by the Vite build.
 _ASSET_DIRS = [
     PROJECT_ROOT / "public" / "assets",
     PROJECT_ROOT / "dist" / "assets",
-    PROJECT_ROOT / "assets",
 ]
 
 @app.get("/assets/{file_path:path}")

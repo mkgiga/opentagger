@@ -325,7 +325,6 @@ export async function loadProjectFromZip(zipData) {
 
     clearWorkspaceForNewProject();
 
-    // Older project files (or none) simply yield no overrides.
     setProjectOverrides(projectData.preferences ?? {});
     refreshPreferencesUI();
 

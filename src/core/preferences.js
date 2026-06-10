@@ -88,22 +88,14 @@ let globalOverrides = {};
 let projectOverrides = {};
 
 /**
- * Hydrate the global layer from persistent storage. In the desktop
- * app this is ~/.opentagger/preferences.json; old localStorage data
- * migrates there the first time. Browsers use localStorage directly.
+ * Hydrate the global layer from persistent storage: the desktop app
+ * reads ~/.opentagger/preferences.json; browsers use localStorage.
  */
 export async function initPreferences() {
     if (native?.prefsLoad) {
         const stored = await native.prefsLoad();
-        if (stored && typeof stored === "object") {
-            globalOverrides = stored;
-            return;
-        }
-        // Nothing on disk yet — migrate any pre-file localStorage data.
-        globalOverrides = loadFromLocalStorage();
-        if (Object.keys(globalOverrides).length > 0) {
-            await native.prefsSave(globalOverrides);
-        }
+        globalOverrides =
+            stored && typeof stored === "object" ? stored : {};
         return;
     }
     globalOverrides = loadFromLocalStorage();
