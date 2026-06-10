@@ -29,6 +29,7 @@
   "dependencies": {
     "codemirror": "^5.65.21",
     "file-saver": "^2.0.5",
-    "jszip": "^3.10.1"
+    "jszip": "^3.10.1",
+    "onnxruntime-node": "^1.26.0"
   }
 }

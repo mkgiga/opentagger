@@ -7,90 +7,46 @@
 // Responsibilities:
 //   1. Open a BrowserWindow pointing at the Vite-built frontend
 //      (dist/index.html), or at the dev server when ELECTRON_DEV=1.
-//   2. Spawn the FastAPI autotag backend as a child process if a
-//      Python venv is found alongside the app. Kill it on quit.
+//   2. Serve the ONNX autotagger (electron/tagger.cjs) over IPC:
+//      model status, on-demand model download, and inference.
 //
-// The backend is optional: if no venv exists, autotag features will
-// fail gracefully (the frontend already handles that). We never block
-// startup waiting on Python.
+// Autotagging runs in-process via onnxruntime-node — there is no
+// Python sidecar. Models are downloaded into userData on the user's
+// first request, never at startup.
 
-const { app, BrowserWindow, shell } = require("electron");
-const { spawn } = require("node:child_process");
-const { existsSync } = require("node:fs");
+const { app, BrowserWindow, shell, ipcMain } = require("electron");
 const { join } = require("node:path");
+const tagger = require("./tagger.cjs");
 
 // ELECTRON_DEV is set by the `npm run electron:dev` script. In
 // packaged builds app.isPackaged is true anyway, but the env var is
 // the explicit signal that the Vite dev server is running.
 const isDev = !app.isPackaged && process.env.ELECTRON_DEV === "1";
 
-// The two roots disagree in packaged mode:
-//   - distRoot is `..` relative to this file. In dev that's the
-//     project root; in a packaged build __dirname is
-//     `<app>/resources/app.asar/electron/`, so `..` is
-//     `<app>/resources/app.asar/` -- which is where Forge put dist/.
-//   - autotagRoot needs to live OUTSIDE the asar (Python can't read
-//     files from inside an asar archive). The Forge `extraResource`
-//     config copies it to `<app>/resources/autotag/`, which is what
-//     process.resourcesPath points at.
+// In dev this is the project root; in a packaged build __dirname is
+// `<app>/resources/app.asar/electron/`, so `..` is the asar root --
+// which is where Forge put dist/.
 const distRoot = join(__dirname, "..");
-const autotagDir = app.isPackaged
-    ? join(process.resourcesPath, "autotag")
-    : join(__dirname, "..", "autotag");
 
 let mainWindow = null;
-let pythonProcess = null;
 
-function pythonExecutablePath() {
-    const venv = join(autotagDir, ".venv");
-    return process.platform === "win32"
-        ? join(venv, "Scripts", "python.exe")
-        : join(venv, "bin", "python");
+function sendProgress(payload) {
+    console.log(`[opentagger] tagger: ${payload.message}`);
+    if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send("tagger:progress", payload);
+    }
 }
 
-function startPythonBackend() {
-    const python = pythonExecutablePath();
-    if (!existsSync(python)) {
-        console.warn(
-            `[opentagger] Python venv not found at ${python}. ` +
-                `Autotag features will be unavailable. ` +
-                `Run run.ps1 / run.sh once to create the venv, then relaunch.`
-        );
-        return;
-    }
-
-    const apiScript = join(autotagDir, "api.py");
-    if (!existsSync(apiScript)) {
-        console.warn(
-            `[opentagger] autotag/api.py not found at ${apiScript}; skipping backend.`
-        );
-        return;
-    }
-
-    console.log(`[opentagger] Starting Python backend: ${python} ${apiScript}`);
-    pythonProcess = spawn(python, [apiScript], {
-        cwd: autotagDir,
-        stdio: "inherit",
-    });
-
-    pythonProcess.on("error", (err) => {
-        console.error("[opentagger] Failed to start Python backend:", err);
-        pythonProcess = null;
-    });
-
-    pythonProcess.on("exit", (code, signal) => {
-        console.log(
-            `[opentagger] Python backend exited (code=${code}, signal=${signal}).`
-        );
-        pythonProcess = null;
-    });
-}
-
-function stopPythonBackend() {
-    if (!pythonProcess || pythonProcess.killed) return;
-    console.log("[opentagger] Stopping Python backend...");
-    pythonProcess.kill();
-    pythonProcess = null;
+function registerIpcHandlers() {
+    ipcMain.handle("tagger:status", (_event, modelId) =>
+        tagger.getStatus(modelId)
+    );
+    ipcMain.handle("tagger:download", (_event, modelId) =>
+        tagger.downloadModel(modelId, sendProgress)
+    );
+    ipcMain.handle("tagger:run", (_event, modelId, pixels) =>
+        tagger.runAutotag(modelId, pixels, sendProgress)
+    );
 }
 
 function createWindow() {
@@ -102,6 +58,7 @@ function createWindow() {
         title: "opentagger",
         backgroundColor: "#f0f0f0",
         webPreferences: {
+            preload: join(__dirname, "preload.cjs"),
             contextIsolation: true,
             nodeIntegration: false,
         },
@@ -125,7 +82,7 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
-    startPythonBackend();
+    registerIpcHandlers();
     createWindow();
 
     app.on("activate", () => {
@@ -134,10 +91,5 @@ app.whenReady().then(() => {
 });
 
 app.on("window-all-closed", () => {
-    stopPythonBackend();
     if (process.platform !== "darwin") app.quit();
-});
-
-app.on("before-quit", () => {
-    stopPythonBackend();
 });

@@ -17,3 +17,6 @@ dist/
 # electron-forge output
 out/
 
+
+# tagger smoke-test model cache
+.cache/

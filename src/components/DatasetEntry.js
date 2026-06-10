@@ -1,5 +1,4 @@
 import { state } from "../core/state.js";
-import { preferences } from "../core/preferences.js";
 import { opentaggerAPI } from "../core/api.js";
 import { createTimerLabelElement } from "../utils/dom.js";
 import { startTimer } from "../utils/timing.js";
@@ -11,7 +10,10 @@ import {
     showConfirmationModal,
     showImagePreviewModal,
 } from "../ui/modal.js";
-import { BACKEND_UNAVAILABLE_MESSAGE } from "../io/autotag.js";
+import {
+    ensureAutotagReady,
+    autotagImage,
+} from "../io/tagger.js";
 
 class DatasetEntry extends HTMLElement {
     constructor() {
@@ -357,6 +359,7 @@ class DatasetEntry extends HTMLElement {
     }
     async _handleAutotagClick(e) {
         e.stopPropagation();
+        if (!(await ensureAutotagReady())) return;
         await this.triggerAutotag(false);
     }
     async triggerAutotag(silent = false) {
@@ -435,65 +438,10 @@ class DatasetEntry extends HTMLElement {
                 );
             }
 
-            const formData = new FormData();
-            formData.append(
-                "image_upload",
+            const result = await autotagImage(
                 imageData,
                 this.originalImageName || "image.png"
             );
-
-            const selectedModel =
-                preferences.tagging.autotagging.autotaggingModel
-                    .value;
-            let endpointPath = "";
-
-            switch (selectedModel) {
-                case "wd-vit-tagger-v3":
-                    endpointPath = "wd-vit-tagger-v3";
-                    break;
-                case "it_so400m_patch14_siglip_384":
-                    endpointPath = "redrocket-joint-tagger";
-                    break;
-                default:
-                    throw new Error(
-                        `Unknown autotagging model selected: ${selectedModel}`
-                    );
-            }
-
-            const fullApiUrl = `${state.AUTOTAG_API_URL}${endpointPath}`;
-
-            const response = await fetch(fullApiUrl, {
-                method: "POST",
-                body: formData,
-            });
-
-            if (!response.ok) {
-                let errorDetail = `HTTP error ${response.status}`;
-                try {
-                    const errorJson = await response.json();
-                    errorDetail = errorJson.detail || errorDetail;
-                } catch (jsonError) {
-                    const errorText = await response.text();
-                    errorDetail = errorText || errorDetail;
-                }
-                if (!silent)
-                    console.error(
-                        `Autotagging HTTP error ${
-                            response.status
-                        } for ${
-                            this.originalImageName
-                        }. Details: ${errorDetail}. Full response text: ${await response
-                            .text()
-                            .catch(
-                                () => "Could not read response text"
-                            )}`
-                    );
-                throw new Error(
-                    `Autotagging failed: ${errorDetail}`
-                );
-            }
-
-            const result = await response.json();
             const tags = result.tags;
             let tagsAddedCount = 0;
 
@@ -542,11 +490,6 @@ class DatasetEntry extends HTMLElement {
                 tagsAddedCount: 0,
                 elapsedTime: 0,
             };
-            if (backendDown && !silent) {
-                showConfirmationModal(BACKEND_UNAVAILABLE_MESSAGE, [
-                    { text: "OK" },
-                ]);
-            }
         } finally {
             if (timer) {
                 operationResult.elapsedTime = timer.stop();
