@@ -18,4 +18,7 @@ contextBridge.exposeInMainWorld("opentaggerNative", {
         return () =>
             ipcRenderer.removeListener("tagger:progress", listener);
     },
+    prefsLoad: () => ipcRenderer.invoke("prefs:load"),
+    prefsSave: (overrides) =>
+        ipcRenderer.invoke("prefs:save", overrides),
 });

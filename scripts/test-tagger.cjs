@@ -1,21 +1,20 @@
 // Standalone smoke test for electron/tagger.cjs, runnable under plain
-// Node. Stubs the electron `app` module so the real download/session/
-// inference code path runs. Downloads the wd-vit-tagger-v3 model
-// (~400MB, cached in .cache/tagger-test/) on first run.
+// Node (the module has no Electron dependency). Downloads the
+// wd-vit-tagger-v3 model (~400MB, cached in .cache/tagger-test/) on
+// first run. NOTE: also run scripts/electron-tagger-test.cjs — plain
+// Node masked a download-corruption bug that only Electron's runtime
+// triggered.
 //
 //   node scripts/test-tagger.cjs
 
-const Module = require("node:module");
 const { join } = require("node:path");
 
-const cacheDir = join(__dirname, "..", ".cache", "tagger-test");
-const originalLoad = Module._load;
-Module._load = function (request, ...rest) {
-    if (request === "electron") {
-        return { app: { getPath: () => cacheDir } };
-    }
-    return originalLoad.call(this, request, ...rest);
-};
+process.env.OPENTAGGER_DATA_DIR = join(
+    __dirname,
+    "..",
+    ".cache",
+    "tagger-test"
+);
 
 const tagger = require("../electron/tagger.cjs");
 
@@ -32,7 +31,7 @@ async function main() {
     const progress = (p) =>
         console.log(`[progress] ${p.message} ${p.percent ?? ""}`);
 
-    let status = tagger.getStatus(MODEL);
+    let status = await tagger.getStatus(MODEL);
     console.log("status:", status);
 
     if (!status.downloaded) {

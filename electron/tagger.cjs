@@ -19,19 +19,18 @@
 // `postprocess`) and call it from the pipeline — don't fork the
 // pipeline per model.
 
-const { app } = require("electron");
 const ort = require("onnxruntime-node");
 const {
     existsSync,
     mkdirSync,
     rmSync,
     readFileSync,
-    writeFileSync,
     createWriteStream,
 } = require("node:fs");
 const { join } = require("node:path");
 const { pipeline } = require("node:stream/promises");
 const { Readable, Transform } = require("node:stream");
+const { storage, modelsDir } = require("./storage.cjs");
 
 // Model registry.
 //
@@ -105,17 +104,23 @@ const sessions = new Map(); // modelId -> { session, vocabulary }
 const downloads = new Map(); // modelId -> in-flight download Promise
 
 function modelDir(modelId) {
-    return join(app.getPath("userData"), "models", modelId);
+    return join(modelsDir, modelId);
 }
-function completeFlagPath(modelId) {
-    return join(modelDir(modelId), "download-complete.json");
+// unstorage key for the completion flag; maps to
+// <root>/models/<id>/download-complete.json on disk, so wiping the
+// model directory removes it too.
+function completeFlagKey(modelId) {
+    return `models:${modelId}:download-complete.json`;
+}
+function isDownloaded(modelId) {
+    return storage.hasItem(completeFlagKey(modelId));
 }
 
-function getStatus(modelId) {
+async function getStatus(modelId) {
     const spec = MODELS[modelId];
     return {
         supported: Boolean(spec),
-        downloaded: Boolean(spec) && existsSync(completeFlagPath(modelId)),
+        downloaded: Boolean(spec) && (await isDownloaded(modelId)),
         downloading: downloads.has(modelId),
         approxDownloadMB: spec ? spec.approxDownloadMB : 0,
         label: spec ? spec.label : modelId,
@@ -169,7 +174,7 @@ function downloadModel(modelId, progress) {
     const downloadPromise = (async () => {
         try {
             const dir = modelDir(modelId);
-            if (existsSync(dir) && !existsSync(completeFlagPath(modelId))) {
+            if (existsSync(dir) && !(await isDownloaded(modelId))) {
                 rmSync(dir, { recursive: true, force: true });
             }
             mkdirSync(dir, { recursive: true });
@@ -181,14 +186,9 @@ function downloadModel(modelId, progress) {
                     progress
                 );
             }
-            writeFileSync(
-                completeFlagPath(modelId),
-                JSON.stringify(
-                    { completedAt: new Date().toISOString() },
-                    null,
-                    2
-                )
-            );
+            await storage.setItem(completeFlagKey(modelId), {
+                completedAt: new Date().toISOString(),
+            });
             progress({
                 phase: "done",
                 message: `${spec.label} downloaded.`,
@@ -336,7 +336,7 @@ async function runAutotag(modelId, pixels, progress, options = {}) {
             error: `Model "${modelId}" has no ONNX build available.`,
         };
     }
-    if (!existsSync(completeFlagPath(modelId))) {
+    if (!(await isDownloaded(modelId))) {
         return {
             success: false,
             error: `Model "${modelId}" is not downloaded.`,

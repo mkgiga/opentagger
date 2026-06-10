@@ -3,6 +3,7 @@
 // to the modules under src/.
 
 import { state } from "./core/state.js";
+import { initPreferences } from "./core/preferences.js";
 import { opentaggerAPI } from "./core/api.js";
 import { evaluateExpression } from "./core/search.js";
 import { debounce } from "./utils/timing.js";
@@ -43,10 +44,13 @@ import "./components/DatasetEntry.js";
 import "./components/TagGroup.js";
 
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
     state.appContainer = document.getElementById("app"); // the <tab-container>
     state.splashScreenElement = document.getElementById("splash-screen");
 
+    // Hydrate global preferences from disk before anything reads them
+    // (the preferences panel and tagger model selection depend on it).
+    await initPreferences();
     initTagger();
 
     // These live inside the "tagging" tab and may be null until that

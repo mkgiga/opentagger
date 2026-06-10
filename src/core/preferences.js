@@ -3,12 +3,17 @@
 // Three layers, most specific wins:
 //   1. project overrides — travel inside the .loraproj (project.json),
 //      cleared on New Project
-//   2. global overrides  — persisted to localStorage
+//   2. global overrides  — persisted to ~/.opentagger/preferences.json
+//      via the native bridge in the desktop app; plain browsers fall
+//      back to localStorage
 //   3. defaults          — the PREFERENCE_DEFAULTS tree below
 //
 // Overrides are flat { "dotted.path": value } maps; the defaults tree
 // doubles as the schema (a leaf's type drives input rendering and
 // value coercion; `@type: "select"` leaves carry their options).
+//
+// Call initPreferences() (and await it) before reading preferences at
+// startup — it hydrates the global layer from disk.
 
 export const PREFERENCE_DEFAULTS = {
     importingImages: {
@@ -62,7 +67,12 @@ export const PREFERENCE_DEFAULTS = {
 
 const STORAGE_KEY = "opentagger.preferences";
 
-function loadGlobalOverrides() {
+const native =
+    typeof window !== "undefined"
+        ? (window.opentaggerNative ?? null)
+        : null;
+
+function loadFromLocalStorage() {
     try {
         const raw = localStorage.getItem(STORAGE_KEY);
         const parsed = raw ? JSON.parse(raw) : {};
@@ -74,10 +84,40 @@ function loadGlobalOverrides() {
     }
 }
 
-let globalOverrides = loadGlobalOverrides();
+let globalOverrides = {};
 let projectOverrides = {};
 
+/**
+ * Hydrate the global layer from persistent storage. In the desktop
+ * app this is ~/.opentagger/preferences.json; old localStorage data
+ * migrates there the first time. Browsers use localStorage directly.
+ */
+export async function initPreferences() {
+    if (native?.prefsLoad) {
+        const stored = await native.prefsLoad();
+        if (stored && typeof stored === "object") {
+            globalOverrides = stored;
+            return;
+        }
+        // Nothing on disk yet — migrate any pre-file localStorage data.
+        globalOverrides = loadFromLocalStorage();
+        if (Object.keys(globalOverrides).length > 0) {
+            await native.prefsSave(globalOverrides);
+        }
+        return;
+    }
+    globalOverrides = loadFromLocalStorage();
+}
+
 function persistGlobalOverrides() {
+    if (native?.prefsSave) {
+        native
+            .prefsSave({ ...globalOverrides })
+            .catch((err) =>
+                console.warn("Could not persist preferences:", err)
+            );
+        return;
+    }
     try {
         localStorage.setItem(
             STORAGE_KEY,

@@ -5,9 +5,16 @@
 // package.json), and Forge just consumes the resulting dist/.
 
 // The only runtime node_modules the packaged app needs: the ONNX
-// runtime used by electron/tagger.cjs. Everything else is either
-// bundled into dist/index.html by Vite or provided by Electron.
-const RUNTIME_NODE_MODULES = ["onnxruntime-node", "onnxruntime-common"];
+// runtime used by electron/tagger.cjs and the unstorage KV layer
+// (electron/storage.cjs; destr is its JSON parser). Everything else
+// is either bundled into dist/index.html by Vite or provided by
+// Electron.
+const RUNTIME_NODE_MODULES = [
+    "onnxruntime-node",
+    "onnxruntime-common",
+    "unstorage",
+    "destr",
+];
 
 // Paths (relative to project root, leading "/") that never ship.
 const IGNORED_PATHS =

@@ -9,9 +9,11 @@
 const { app } = require("electron");
 const { join } = require("node:path");
 
-app.setPath(
-    "userData",
-    join(__dirname, "..", ".cache", "electron-tagger-test")
+process.env.OPENTAGGER_DATA_DIR = join(
+    __dirname,
+    "..",
+    ".cache",
+    "electron-tagger-test"
 );
 
 const tagger = require("../electron/tagger.cjs");
@@ -26,7 +28,7 @@ async function main() {
         }
     };
 
-    if (!tagger.getStatus(MODEL).downloaded) {
+    if (!(await tagger.getStatus(MODEL)).downloaded) {
         console.log("downloading model through Electron runtime…");
         const result = await tagger.downloadModel(MODEL, progress);
         if (!result.success) {
