@@ -239,11 +239,8 @@ export function handleProjectFileSelect(event) {
             showMainAppUI();
             // Ensure tagging tab is active after loading a project
             const appTabs = document.getElementById("app");
-            if (
-                appTabs &&
-                typeof appTabs.activateTab === "function"
-            ) {
-                appTabs.activateTab(appTabs.sanitizeId("tagging"));
+            if (appTabs) {
+                appTabs.activeTab = "tagging";
             }
         } catch (error) {
             console.error("Error loading project file:", error);

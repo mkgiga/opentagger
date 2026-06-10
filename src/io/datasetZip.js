@@ -146,8 +146,8 @@ export async function handleDatasetZipSelect(event) {
         showMainAppUI();
         // Ensure tagging tab is active after importing
         const appTabs = document.getElementById("app");
-        if (appTabs && typeof appTabs.activateTab === "function") {
-            appTabs.activateTab(appTabs.sanitizeId("tagging"));
+        if (appTabs) {
+            appTabs.activeTab = "tagging";
         }
         checkDropHintVisibility();
     } catch (error) {

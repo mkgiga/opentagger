@@ -505,16 +505,8 @@ document.addEventListener("DOMContentLoaded", () => {
                                 showMainAppUI();
                                 const appTabs =
                                     document.getElementById("app");
-                                if (
-                                    appTabs &&
-                                    typeof appTabs.activateTab ===
-                                        "function"
-                                ) {
-                                    appTabs.activateTab(
-                                        appTabs.sanitizeId(
-                                            "tagging"
-                                        )
-                                    );
+                                if (appTabs) {
+                                    appTabs.activeTab = "tagging";
                                 }
                             },
                             dataAction: "new-project",
