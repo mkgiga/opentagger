@@ -54,6 +54,9 @@ const { storage, modelsDir } = require("./storage.cjs");
 //                     arrays are per-channel in RGB order
 //   output            { activation: "none" | "sigmoid" } — "none" means
 //                     the graph already emits probabilities
+//   executionProviders optional EP list overriding the platform
+//                     default (e.g. ["webgpu", "cpu"] for graphs whose
+//                     dynamic shapes break DirectML)
 //   vocabulary        { file, format: "wd-csv" | "jtp-json" |
 //                     "idx2tag-json" }
 //   thresholds        per-category score cutoffs; categories a model's
@@ -125,6 +128,10 @@ const MODELS = {
             },
         },
         output: { activation: "sigmoid" },
+        // DirectML compiles fixed operator plans and dies at run time
+        // on this graph's dynamic-dim Reshape; WebGPU handles dynamic
+        // shapes (and is ~37x faster than CPU here).
+        executionProviders: ["webgpu", "cpu"],
         vocabulary: { file: "vocab.json", format: "idx2tag-json" },
         thresholds: { general: 0.4 },
     },
@@ -302,7 +309,8 @@ function loadVocabulary(modelId, spec) {
     }
 }
 
-function preferredExecutionProviders() {
+function preferredExecutionProviders(spec) {
+    if (spec.executionProviders) return spec.executionProviders;
     switch (process.platform) {
         case "win32":
             return ["dml", "cpu"];
@@ -325,7 +333,7 @@ async function getSession(modelId, spec, progress) {
 
     let session;
     let cpuOnly = false;
-    const providers = preferredExecutionProviders();
+    const providers = preferredExecutionProviders(spec);
     try {
         session = await ort.InferenceSession.create(modelPath, {
             executionProviders: providers,
