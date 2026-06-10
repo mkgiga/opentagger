@@ -10,6 +10,31 @@ import { createTimerLabelElement } from "../utils/dom.js";
 import { startTimer } from "../utils/timing.js";
 import { showConfirmationModal } from "../ui/modal.js";
 
+export const BACKEND_UNAVAILABLE_MESSAGE =
+    "Autotagging is unavailable: the autotag backend is not running.\n\n" +
+    "Autotagging needs a local Python server (autotag/api.py) listening " +
+    "on localhost:8081. To set it up, run run.ps1 (Windows) or run.sh " +
+    "(Linux/macOS) from the opentagger folder once — it creates a Python " +
+    "virtual environment, installs the dependencies, and starts the " +
+    "server. Once the venv exists, the desktop app starts the backend " +
+    "automatically on launch.";
+
+/**
+ * Single quick probe of the backend /health endpoint. Returns the
+ * health JSON when the backend is up, or null when it is unreachable.
+ */
+export async function probeBackend(timeoutMs = 2500) {
+    try {
+        const response = await fetch(state.HEALTH_CHECK_URL, {
+            signal: AbortSignal.timeout(timeoutMs),
+        });
+        if (!response.ok) return null;
+        return await response.json();
+    } catch {
+        return null;
+    }
+}
+
 export async function checkBackendReady(maxRetries = 30, delay = 1000) {
     console.log(
         `Checking backend readiness at ${state.HEALTH_CHECK_URL}...`
@@ -66,6 +91,14 @@ export async function handleAutotagAllClick() {
         return;
     }
 
+    // Pre-flight: don't start a batch run against a dead backend.
+    if ((await probeBackend()) === null) {
+        showConfirmationModal(BACKEND_UNAVAILABLE_MESSAGE, [
+            { text: "OK" },
+        ]);
+        return;
+    }
+
     const originalButtonIcon = state.autotagAllButton.textContent;
     const originalButtonTitle =
         state.autotagAllButton.getAttribute("title");
@@ -91,6 +124,7 @@ export async function handleAutotagAllClick() {
 
     let successCount = 0;
     let failCount = 0;
+    let firstFailureMessage = null;
     const totalEntries = entriesToAutotag.length;
 
     let globalTimer = startTimer((timeString) => {
@@ -127,6 +161,9 @@ export async function handleAutotagAllClick() {
                 );
             } else {
                 failCount++;
+                if (!firstFailureMessage && result?.message) {
+                    firstFailureMessage = result.message;
+                }
                 console.warn(
                     `Autotagging failed or no tags added for: ${entryDisplayName}. Message: ${
                         result ? result.message : "No details"
@@ -135,6 +172,9 @@ export async function handleAutotagAllClick() {
             }
         } catch (error) {
             failCount++;
+            if (!firstFailureMessage) {
+                firstFailureMessage = error.message;
+            }
             console.error(
                 `Critical error during autotag for entry ${entryDisplayName}:`,
                 error
@@ -181,6 +221,9 @@ export async function handleAutotagAllClick() {
         )}s): All entries failed or had no new tags to add.`;
     } else if (totalEntries === 0) {
         summaryMessage = "No visible entries were processed.";
+    }
+    if (failCount > 0 && firstFailureMessage) {
+        summaryMessage += `\n\nFirst error: ${firstFailureMessage}`;
     }
     showConfirmationModal(summaryMessage, [{ text: "OK" }]);
 }

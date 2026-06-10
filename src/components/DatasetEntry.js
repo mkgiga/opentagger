@@ -11,6 +11,7 @@ import {
     showConfirmationModal,
     showImagePreviewModal,
 } from "../ui/modal.js";
+import { BACKEND_UNAVAILABLE_MESSAGE } from "../io/autotag.js";
 
 class DatasetEntry extends HTMLElement {
     constructor() {
@@ -529,12 +530,23 @@ class DatasetEntry extends HTMLElement {
                 }:`,
                 error
             );
+            // fetch throws a TypeError when the server is unreachable.
+            const backendDown =
+                error instanceof TypeError &&
+                /fetch|network/i.test(error.message);
             operationResult = {
                 success: false,
-                message: error.message,
+                message: backendDown
+                    ? "Autotag backend is not running (could not reach localhost:8081)."
+                    : error.message,
                 tagsAddedCount: 0,
                 elapsedTime: 0,
             };
+            if (backendDown && !silent) {
+                showConfirmationModal(BACKEND_UNAVAILABLE_MESSAGE, [
+                    { text: "OK" },
+                ]);
+            }
         } finally {
             if (timer) {
                 operationResult.elapsedTime = timer.stop();
