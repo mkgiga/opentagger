@@ -54,6 +54,7 @@ export const PREFERENCE_DEFAULTS = {
                 options: [
                     "wd-vit-tagger-v3",
                     "it_so400m_patch14_siglip_384",
+                    "taggerine",
                 ],
             },
             // Per-model score cutoffs. Keys ending in "Threshold" map
@@ -66,6 +67,9 @@ export const PREFERENCE_DEFAULTS = {
                 },
                 it_so400m_patch14_siglip_384: {
                     generalThreshold: 0.2,
+                },
+                taggerine: {
+                    generalThreshold: 0.4,
                 },
             },
         },

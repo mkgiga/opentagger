@@ -237,11 +237,16 @@ export async function ensureAutotagReady() {
 /**
  * Decode an image Blob and produce the model's input tensor data,
  * driven entirely by the `input` spec the main process serves with
- * taggerStatus: { size, layout, channelOrder, padColor, normalize }.
+ * taggerStatus. Returns { data, width, height }.
+ *
+ * Sizing modes:
+ *   "square" (default) — pad to size×size with padColor
+ *   "fit"              — aspect-preserving resize, no padding, dims
+ *                        snapped to patchMultiple, long edge ≤ maxSize
  */
 async function preprocess(blob, input) {
     const {
-        size,
+        mode = "square",
         layout = "nhwc",
         channelOrder = "rgb",
         padColor = 255,
@@ -249,33 +254,66 @@ async function preprocess(blob, input) {
     } = input;
 
     const bitmap = await createImageBitmap(blob);
-    const canvas = new OffscreenCanvas(size, size);
-    const ctx = canvas.getContext("2d");
-    ctx.fillStyle = `rgb(${padColor}, ${padColor}, ${padColor})`;
-    ctx.fillRect(0, 0, size, size);
+    let width, height;
+    if (mode === "fit") {
+        const multiple = input.patchMultiple ?? 16;
+        const snap = (v) =>
+            Math.max(multiple, Math.round(v / multiple) * multiple);
+        const longEdge = Math.max(bitmap.width, bitmap.height);
+        const targetLong = snap(
+            Math.min(longEdge, input.maxSize ?? 1024)
+        );
+        const scale = targetLong / longEdge;
+        width = snap(bitmap.width * scale);
+        height = snap(bitmap.height * scale);
+    } else {
+        width = height = input.size;
+    }
 
-    const scale = Math.min(
-        size / bitmap.width,
-        size / bitmap.height
-    );
-    const w = Math.round(bitmap.width * scale);
-    const h = Math.round(bitmap.height * scale);
-    ctx.drawImage(bitmap, (size - w) / 2, (size - h) / 2, w, h);
+    const canvas = new OffscreenCanvas(width, height);
+    const ctx = canvas.getContext("2d");
+    if (mode === "fit") {
+        ctx.drawImage(bitmap, 0, 0, width, height);
+    } else {
+        ctx.fillStyle = `rgb(${padColor}, ${padColor}, ${padColor})`;
+        ctx.fillRect(0, 0, width, height);
+        const scale = Math.min(
+            width / bitmap.width,
+            height / bitmap.height
+        );
+        const w = Math.round(bitmap.width * scale);
+        const h = Math.round(bitmap.height * scale);
+        ctx.drawImage(
+            bitmap,
+            (width - w) / 2,
+            (height - h) / 2,
+            w,
+            h
+        );
+    }
     bitmap.close();
 
-    const { data } = ctx.getImageData(0, 0, size, size); // RGBA
+    const { data } = ctx.getImageData(0, 0, width, height); // RGBA
     // Per-channel offsets into each RGBA pixel, in output order.
     const channels =
         channelOrder === "bgr" ? [2, 1, 0] : [0, 1, 2];
-    const pixelCount = size * size;
+    const pixelCount = width * height;
     const out = new Float32Array(pixelCount * 3);
 
     for (let p = 0; p < pixelCount; p++) {
         for (let c = 0; c < 3; c++) {
-            let value = data[p * 4 + channels[c]];
+            const src = channels[c];
+            let value = data[p * 4 + src];
             if (normalize) {
-                value =
-                    (value / 255 - normalize.mean) / normalize.std;
+                // Array mean/std are per-channel in RGB order;
+                // scalars apply uniformly.
+                const mean = Array.isArray(normalize.mean)
+                    ? normalize.mean[src]
+                    : normalize.mean;
+                const std = Array.isArray(normalize.std)
+                    ? normalize.std[src]
+                    : normalize.std;
+                value = (value / 255 - mean) / std;
             }
             // nhwc: [pixel][channel]; nchw: [channel][pixel]
             const index =
@@ -285,11 +323,11 @@ async function preprocess(blob, input) {
             out[index] = value;
         }
     }
-    return out;
+    return { data: out, width, height };
 }
 
 async function autotagNative(imageBlob, modelId, inputSpec) {
-    const pixels = await preprocess(imageBlob, inputSpec);
+    const pixels = await preprocess(imageBlob, inputSpec); // {data,width,height}
     const result = await native.taggerRun(modelId, pixels, {
         thresholds: thresholdPreferences(modelId),
         replaceUnderscores: getPreference(

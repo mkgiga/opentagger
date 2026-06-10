@@ -24,7 +24,11 @@ const SIZE = 448;
 function syntheticImage() {
     // Plain white canvas — the tagger should report things like
     // "white background" / "simple background" / "no humans".
-    return new Float32Array(SIZE * SIZE * 3).fill(255);
+    return {
+        data: new Float32Array(SIZE * SIZE * 3).fill(255),
+        width: SIZE,
+        height: SIZE,
+    };
 }
 
 async function main() {

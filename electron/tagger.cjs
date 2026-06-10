@@ -39,15 +39,23 @@ const { storage, modelsDir } = require("./storage.cjs");
 //   approxDownloadMB  shown in the consent dialog
 //   files             { filename: url } — all downloaded on first use
 //   input             how the renderer must preprocess pixels:
-//     size            square edge in px
-//     layout          "nhwc" | "nchw"  (tensor dims [1,s,s,3] / [1,3,s,s])
+//     mode            "square" (default): pad to a size×size square;
+//                     "fit": aspect-preserving resize, no padding,
+//                     dims snapped to patchMultiple (needs a model
+//                     with dynamic height/width axes)
+//     size            square edge in px (square mode)
+//     patchMultiple   dim snap granularity (fit mode)
+//     maxSize         long-edge cap in px (fit mode)
+//     layout          "nhwc" | "nchw"
 //     channelOrder    "bgr" | "rgb"
 //     padColor        0-255 grayscale fill behind non-square images
 //     normalize       null = raw 0-255 floats, or { mean, std } applied
-//                     to 0-1 scaled values, uniform across channels
+//                     to 0-1 scaled values; scalars apply uniformly,
+//                     arrays are per-channel in RGB order
 //   output            { activation: "none" | "sigmoid" } — "none" means
 //                     the graph already emits probabilities
-//   vocabulary        { file, format: "wd-csv" | "jtp-json" }
+//   vocabulary        { file, format: "wd-csv" | "jtp-json" |
+//                     "idx2tag-json" }
 //   thresholds        per-category score cutoffs; categories a model's
 //                     vocabulary lacks are simply never matched
 //
@@ -86,6 +94,40 @@ const MODELS = {
         thresholds: { general: 0.35, character: 0.85 },
     },
     it_so400m_patch14_siglip_384: null,
+    // DINOv3 ViT-H/16+ booru/furry tagger by lodestones. No official
+    // ONNX; this is the community full-precision export of the same
+    // checkpoint (silveroxides/tagger-experiment-onnx — the model's
+    // pre-rename repo): a small graph plus 5.27GB external weights
+    // that ORT loads from the adjacent model.onnx.data. Dynamic input
+    // dims, so it runs the reference aspect-preserving preprocessing.
+    // (The repo also has a 1.3GB int8 quantization, but it fails on
+    // DirectML at run time and is, well, heavily quantized.)
+    taggerine: {
+        label: "Taggerine (DINOv3 ViT-H)",
+        approxDownloadMB: 5400,
+        files: {
+            "model.onnx":
+                "https://huggingface.co/silveroxides/tagger-experiment-onnx/resolve/main/tagger/model.onnx",
+            "model.onnx.data":
+                "https://huggingface.co/silveroxides/tagger-experiment-onnx/resolve/main/tagger/model.onnx.data",
+            "vocab.json":
+                "https://huggingface.co/lodestones/taggerine/resolve/main/tagger_vocab_with_categories.json",
+        },
+        input: {
+            mode: "fit",
+            patchMultiple: 16,
+            maxSize: 1024,
+            layout: "nchw",
+            channelOrder: "rgb",
+            normalize: {
+                mean: [0.485, 0.456, 0.406],
+                std: [0.229, 0.224, 0.225],
+            },
+        },
+        output: { activation: "sigmoid" },
+        vocabulary: { file: "vocab.json", format: "idx2tag-json" },
+        thresholds: { general: 0.4 },
+    },
 };
 
 // wd-csv category ids -> threshold keys. Category 9 (rating) has no
@@ -245,6 +287,14 @@ function loadVocabulary(modelId, spec) {
             }
             return entries;
         }
+        case "idx2tag-json": {
+            // { "idx2tag": ["tag", ...] } — index-aligned with the
+            // logits vector, all "general"
+            return JSON.parse(raw).idx2tag.map((name) => ({
+                name,
+                category: "general",
+            }));
+        }
         default:
             throw new Error(
                 `Unknown vocabulary format: ${spec.vocabulary.format}`
@@ -274,6 +324,7 @@ async function getSession(modelId, spec, progress) {
     });
 
     let session;
+    let cpuOnly = false;
     const providers = preferredExecutionProviders();
     try {
         session = await ort.InferenceSession.create(modelPath, {
@@ -290,6 +341,7 @@ async function getSession(modelId, spec, progress) {
             session = await ort.InferenceSession.create(modelPath, {
                 executionProviders: ["cpu"],
             });
+            cpuOnly = true;
         } catch (cpuErr) {
             if (/protobuf parsing failed|load model/i.test(cpuErr.message)) {
                 // The file on disk is unreadable as a model — wipe it
@@ -309,7 +361,11 @@ async function getSession(modelId, spec, progress) {
         }
     }
 
-    const entry = { session, vocabulary: loadVocabulary(modelId, spec) };
+    const entry = {
+        session,
+        cpuOnly,
+        vocabulary: loadVocabulary(modelId, spec),
+    };
     sessions.set(modelId, entry);
     // Terminal event so the renderer's progress bar doesn't stay
     // stuck on the "Loading…" message.
@@ -326,16 +382,17 @@ function prettifyTag(name, replaceUnderscores) {
     return name.replaceAll("_", " ");
 }
 
-function tensorDims(input) {
+function tensorDims(input, width, height) {
     return input.layout === "nchw"
-        ? [1, 3, input.size, input.size]
-        : [1, input.size, input.size, 3];
+        ? [1, 3, height, width]
+        : [1, height, width, 3];
 }
 
-// `pixels` is a Float32Array preprocessed by the renderer according
-// to the model's `input` spec. User preferences arrive via `options`:
-// `thresholds` ({ category: cutoff }) overrides the spec's defaults,
-// `replaceUnderscores` (default true) controls tag-name prettifying.
+// `pixels` is { data: Float32Array, width, height } preprocessed by
+// the renderer according to the model's `input` spec. User
+// preferences arrive via `options`: `thresholds` ({ category: cutoff })
+// overrides the spec's defaults, `replaceUnderscores` (default true)
+// controls tag-name prettifying.
 async function runAutotag(modelId, pixels, progress, options = {}) {
     const spec = MODELS[modelId];
     if (!spec) {
@@ -352,21 +409,62 @@ async function runAutotag(modelId, pixels, progress, options = {}) {
     }
 
     try {
-        const { session, vocabulary } = await getSession(
-            modelId,
-            spec,
-            progress
-        );
+        let entry = await getSession(modelId, spec, progress);
+        const { width, height } = pixels;
         const data =
-            pixels instanceof Float32Array
-                ? pixels
-                : new Float32Array(pixels.buffer ?? pixels);
-        const input = new ort.Tensor("float32", data, tensorDims(spec.input));
+            pixels.data instanceof Float32Array
+                ? pixels.data
+                : new Float32Array(pixels.data);
+        if (data.length !== width * height * 3) {
+            throw new Error(
+                `Pixel data length ${data.length} does not match ${width}x${height}x3.`
+            );
+        }
+        const input = new ort.Tensor(
+            "float32",
+            data,
+            tensorDims(spec.input, width, height)
+        );
 
-        const results = await session.run({
-            [session.inputNames[0]]: input,
-        });
-        const scores = results[session.outputNames[0]].data;
+        let results;
+        try {
+            results = await entry.session.run({
+                [entry.session.inputNames[0]]: input,
+            });
+        } catch (runErr) {
+            // Some models create a session fine on a GPU EP but fail
+            // at run time (unsupported ops, dynamic shapes). Retry
+            // once on CPU and keep the CPU session for future runs.
+            if (entry.cpuOnly) throw runErr;
+            console.warn(
+                `[opentagger] ${modelId} failed at run time on GPU EP (${runErr.message}); retrying on CPU.`
+            );
+            progress({
+                phase: "load",
+                message: `Reloading ${spec.label} on CPU…`,
+                percent: null,
+            });
+            const cpuSession = await ort.InferenceSession.create(
+                join(modelDir(modelId), "model.onnx"),
+                { executionProviders: ["cpu"] }
+            );
+            entry = {
+                session: cpuSession,
+                cpuOnly: true,
+                vocabulary: entry.vocabulary,
+            };
+            sessions.set(modelId, entry);
+            progress({
+                phase: "done",
+                message: `${spec.label} loaded (CPU).`,
+                percent: null,
+            });
+            results = await entry.session.run({
+                [entry.session.inputNames[0]]: input,
+            });
+        }
+        const { vocabulary } = entry;
+        const scores = results[entry.session.outputNames[0]].data;
 
         const thresholds = {
             ...spec.thresholds,

@@ -38,8 +38,9 @@ async function main() {
 
     // Solid red in BGR layout — expects "red theme"/"red background";
     // also proves the downloaded file parses as a valid model.
-    const px = new Float32Array(SIZE * SIZE * 3);
-    for (let i = 0; i < px.length; i += 3) px[i + 2] = 255;
+    const data = new Float32Array(SIZE * SIZE * 3);
+    for (let i = 0; i < data.length; i += 3) data[i + 2] = 255;
+    const px = { data, width: SIZE, height: SIZE };
 
     const result = await tagger.runAutotag(MODEL, px, progress);
     if (!result.success) throw new Error(result.error);
