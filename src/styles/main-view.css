@@ -35,6 +35,16 @@
     border: 2px dashed #ddd;
     border-radius: 5px;
     margin-bottom: 20px;
+    transition: border-color 0.15s, color 0.15s, background-color 0.15s;
+}
+
+#main-content-area .drop-hint:not(.no-results) {
+    cursor: pointer;
+}
+#main-content-area .drop-hint:not(.no-results):hover {
+    border-color: #999;
+    color: #777;
+    background-color: rgba(0, 0, 0, 0.03);
 }
 
 #main-content-area .drop-hint.no-results {

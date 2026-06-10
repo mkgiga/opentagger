@@ -265,7 +265,10 @@
                         />
                     </div>
                     <div id="main-content-area">
-                        <p class="drop-hint">Drag & Drop Images Here</p>
+                        <p class="drop-hint">
+                            Drag & Drop Images Here — or Click to
+                            Browse
+                        </p>
                     </div>
                     <div id="developer-console">
                         <div id="console-output"></div>
@@ -294,6 +297,14 @@
             type="file"
             id="dataset-zip-input"
             accept=".zip"
+            style="display: none"
+        />
+
+        <input
+            type="file"
+            id="image-file-input"
+            accept="image/*"
+            multiple
             style="display: none"
         />
 

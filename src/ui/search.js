@@ -15,7 +15,7 @@ export const checkDropHintVisibility = () => {
 
     if (!hasAnyEntries) {
         state.dropHint.textContent =
-            "Drag & Drop Images Here, Load Project, or Import Dataset ZIP";
+            "Drag & Drop Images Here, Load Project, or Import Dataset ZIP — or Click to Browse";
         state.dropHint.classList.remove("no-results");
         state.dropHint.style.display = "block";
         return;

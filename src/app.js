@@ -269,6 +269,8 @@ document.addEventListener("DOMContentLoaded", () => {
         document.getElementById("project-file-input");
     const datasetZipInput =
         document.getElementById("dataset-zip-input");
+    const imageFileInput =
+        document.getElementById("image-file-input");
 
     const splashNewProjectBtn =
         document.getElementById("splash-new-project");
@@ -300,6 +302,37 @@ document.addEventListener("DOMContentLoaded", () => {
             handleDatasetZipSelect
         );
     }
+    if (imageFileInput) {
+        imageFileInput.addEventListener("change", (e) => {
+            if (e.target.files?.length > 0) {
+                if (
+                    state.splashScreenElement &&
+                    !state.splashScreenElement.classList.contains(
+                        "hidden"
+                    )
+                ) {
+                    showMainAppUI();
+                }
+                handleFiles(e.target.files);
+            }
+            e.target.value = null;
+        });
+    }
+
+    // Clicking the drop hint opens the image file picker. Delegated
+    // because the hint lives inside a tab that may not be active yet.
+    document.addEventListener("click", (e) => {
+        const hint = e.target.closest(
+            "#main-content-area .drop-hint"
+        );
+        if (
+            hint &&
+            !hint.classList.contains("no-results") &&
+            imageFileInput
+        ) {
+            imageFileInput.click();
+        }
+    });
 
     if (state.autotagAllButton) {
         state.autotagAllButton.addEventListener(
@@ -537,6 +570,14 @@ document.addEventListener("DOMContentLoaded", () => {
                         },
                         { type: "divider" },
 
+                        {
+                            label: "Import Images...",
+                            callback: () => {
+                                if (imageFileInput)
+                                    imageFileInput.click();
+                            },
+                            dataAction: "import-images",
+                        },
                         {
                             label: "Import Dataset (ZIP)...",
                             callback: () => {
