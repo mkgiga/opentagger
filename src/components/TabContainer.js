@@ -27,7 +27,7 @@ class HTMLTabContainerElement extends HTMLElement {
           display: flex;
           flex-direction: column;
           border: var(--tab-container-border, 1px solid #ccc);
-          border-radius: var(--tab-container-radius, 0px); /* Adjusted for seamless integration */
+          border-radius: var(--tab-container-radius, 0px);
           overflow: hidden;
           flex-grow: 1; /* Ensure it can grow if its parent is flex */
           height: 100%; /* Often useful to fill parent height */
@@ -129,8 +129,8 @@ display: flex; /* Use flex for active panel */
             childList: true,
             attributes: true,
             attributeOldValue: true,
-            subtree: true, // Observe subtree for attribute changes on panels
-            attributeFilter: ["tab", "tab-label", "id"], // Added 'id' to track user changes
+            subtree: true, // observe attribute changes on panels
+            attributeFilter: ["tab", "tab-label", "id"],
         });
 
         this.#processSlottedChildren();
@@ -233,9 +233,7 @@ display: flex; /* Use flex for active panel */
                             panelElement.getAttribute("tab-label")
                         );
                 } else if (mutation.attributeName === "id") {
-                    // If user changes panel's ID, we might need to update aria-controls if we were using it.
-                    // The current #addTab logic prefers user's ID, so this should be less of an issue.
-                    // Re-processing the tab might be safest if its ID changes.
+                    // Keep aria-controls in sync if the panel's ID changes.
                     if (
                         sanitizedCurrentTabId &&
                         this.#panelsByTabId.has(
@@ -339,12 +337,9 @@ display: flex; /* Use flex for active panel */
                 if (this.getAttribute("active-tab"))
                     this.removeAttribute("active-tab");
             }
-        } else if (!hostActiveTabAttr && this.#activeTabId) {
-            // Host attribute was removed, but an internal tab is still active.
-            // This case might imply deselecting all, or re-syncing host attribute.
-            // For now, let's assume if host attribute is removed, we try to pick a default or clear.
-            // This is mostly handled by the `this.activeTab = null` in attributeChangedCallback.
         }
+        // Host attribute removed while a tab is active is handled by
+        // `this.activeTab = null` in attributeChangedCallback.
     }
 
     #addTab(panelElement) {
@@ -414,17 +409,17 @@ display: flex; /* Use flex for active panel */
         }
         const panel = this.#panelsByTabId.get(sanitizedInternalKey);
         if (panel) {
-            // Don't remove user-set ID, just ARIA roles if they were set by this component
+            // Strip ARIA attributes set by this component, but keep the
+            // panel's ID (it may be user-set).
             panel.removeAttribute("role");
-            // panel.removeAttribute('id'); // NO! Keep user's ID or generated one if we set it.
             panel.removeAttribute("aria-labelledby");
-            panel.setAttribute("aria-hidden", "true"); // Ensure it's hidden
+            panel.setAttribute("aria-hidden", "true");
             this.#panelsByTabId.delete(sanitizedInternalKey);
         }
 
         if (this.#activeTabId === sanitizedInternalKey) {
             this.#activeTabId = null;
-            // #ensureActiveTab will handle selecting a new default if necessary
+            // #ensureActiveTab will pick a new default if necessary
         }
     }
 
@@ -600,10 +595,8 @@ display: flex; /* Use flex for active panel */
 
         if (shouldPreventDefault) event.preventDefault();
 
-        // Find the sanitized key corresponding to the new button to activate
+        // Find the sanitized key for the button to activate.
         const newButtonToActivate = buttons[newIndex];
-        // We need to find the sanitizedInternalKey associated with this button.
-        // This is a bit indirect; ideally, the button would store its sanitized key.
         let targetSanitizedKey = null;
         for (const [key, btn] of this.#buttonsByTabId.entries()) {
             if (btn === newButtonToActivate) {

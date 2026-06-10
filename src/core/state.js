@@ -1,13 +1,10 @@
 // Shared mutable state and constants used across the app.
 //
-// All shared state lives on a single exported `state` object so that
-// modules can read AND write properties without dancing through getter
-// /setter pairs (ESM bindings are read-only for direct names). This is
-// the bridge during the monolith-to-modules refactor; once the dust
-// settles individual modules can own their own state.
+// Everything lives on a single exported `state` object so modules can
+// both read and write properties (ESM named bindings are read-only).
 
 export const state = {
-    // --- Constants (effectively final, kept here for one-stop import) ---
+    // --- Constants ---
     PROJECT_FILE_EXTENSION: ".loraproj",
     AUTOTAG_API_URL: "http://localhost:8081/autotag/",
     HEALTH_CHECK_URL: "http://localhost:8081/health",

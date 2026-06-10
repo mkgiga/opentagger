@@ -92,22 +92,13 @@ class AutocompleteDropdown extends HTMLElement {
         } else if (fitsAbove) {
             finalTopViewportRelative = topIfAbove;
         } else {
-            // Neither fits perfectly. Choose based on which has more space or is less clipped.
-            // If target is more in top half of screen, prefer showing below (even if clamped).
-            // If target is more in bottom half, prefer showing above (even if clamped).
+            // Neither fits: show below if the target is in the top half
+            // of the viewport, above otherwise (clamped later).
             if (currentTargetRect.top < viewportHeight / 2) {
                 finalTopViewportRelative = topIfBelow;
             } else {
                 finalTopViewportRelative = topIfAbove;
             }
-            // Alternative for when neither fits: check which would be less clipped.
-            // const overflowBelowAmount = Math.max(0, (topIfBelow + dropdownHeight + margin) - viewportHeight);
-            // const overflowAboveAmount = Math.max(0, margin - topIfAbove);
-            // if (overflowBelowAmount <= overflowAboveAmount) {
-            //    finalTopViewportRelative = topIfBelow;
-            // } else {
-            //    finalTopViewportRelative = topIfAbove;
-            // }
         }
 
         // Determine horizontal position
@@ -155,12 +146,6 @@ class AutocompleteDropdown extends HTMLElement {
         dropdown.style.left = `${
             finalLeftViewportRelative + window.scrollX
         }px`;
-
-        // minWidth was already set for measurement. If CSS has a stronger min-width (e.g., 150px),
-        // dropdownWidth would have reflected that.
-        // If you want to ensure it's NOT NARROWER than the target, the previous style.minWidth handles it.
-        // If you want it not wider than target (unless content dictates), that's harder.
-        // Current logic: it's at least target.width, or its own content width, or css min-width, whichever is largest.
 
         // Make it truly visible at the calculated position
         dropdown.style.visibility = "visible";
@@ -222,9 +207,7 @@ class AutocompleteDropdown extends HTMLElement {
                 true
             );
         }
-        // Don't nullify _targetElement here if hide can be called temporarily during complex interactions.
-        // However, for a typical hide, it's fine. If a new `show` call happens, _targetElement gets reset.
-        // this._targetElement = null;
+        // _targetElement is intentionally left set; show() resets it.
         this.dispatchEvent(new CustomEvent("dropdown-hidden"));
     }
 
@@ -258,8 +241,8 @@ class AutocompleteDropdown extends HTMLElement {
                     event.stopPropagation();
                     this._selectItem(this._selectedIndex);
                 } else {
-                    // If no item is selected but dropdown is open, Enter/Tab might mean "accept current input text"
-                    // This is handled by the input's blur/keydown. Here, just hide.
+                    // Accepting the raw input text is handled by the
+                    // input itself; just hide.
                     this.hide();
                 }
                 break;
@@ -284,11 +267,9 @@ class AutocompleteDropdown extends HTMLElement {
         if (newIndex >= 0 && newIndex < this._suggestions.length) {
             this._selectedIndex = newIndex;
         } else if (newIndex < 0) {
-            // Wrap around to last item or stay at first
-            this._selectedIndex = this._suggestions.length - 1; // Or 0 to not wrap
+            this._selectedIndex = this._suggestions.length - 1; // wrap to last
         } else if (newIndex >= this._suggestions.length) {
-            // Wrap around to first item or stay at last
-            this._selectedIndex = 0; // Or this._suggestions.length - 1 to not wrap
+            this._selectedIndex = 0; // wrap to first
         }
         this._updateSelectionVisuals();
     }

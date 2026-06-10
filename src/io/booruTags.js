@@ -55,7 +55,6 @@ export async function loadBooruTags() {
                     const tagName = parts[0].trim();
                     const typeN = parseInt(parts[1], 10);
                     const imageCount = parseInt(parts[2], 10);
-                    // const aliases = parts[3] ? parts[3].trim() : ''; // Aliases raw string
 
                     if (
                         tagName &&

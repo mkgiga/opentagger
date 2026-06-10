@@ -150,21 +150,21 @@ class DatasetEntry extends HTMLElement {
         const target = event.target;
         if (
             target.closest("button") ||
-            target.closest("dataset-tag") || // Allow click on tag to propagate if needed by tag itself
+            target.closest("dataset-tag") ||
             target.closest('span[contenteditable="true"]') ||
             target.tagName === "IMG"
         ) {
-            // If the dataset-tag was clicked, and it wasn't the editable span or delete button,
-            // it might be for initiating drag. Let the event propagate for that.
-            // If it was span/button, those have their own handlers.
+            // A click on a dataset-tag body (not its editable span or
+            // delete button) may be a drag start — let it propagate.
+            // Other interactive elements have their own handlers.
             if (
                 target.closest("dataset-tag") &&
                 !target.closest("span[contenteditable]") &&
                 !target.closest(".delete-tag")
             ) {
-                // Fine, could be drag start
+                // fall through
             } else {
-                return; // Otherwise, specific interactive element was clicked.
+                return;
             }
         }
 
@@ -358,7 +358,7 @@ class DatasetEntry extends HTMLElement {
         e.stopPropagation();
         await this.triggerAutotag(false);
     }
-    async triggerAutotag(silent = false) { // Changed: Modified fetch URL logic
+    async triggerAutotag(silent = false) {
         const autotagButton = this.querySelector(".autotag-entry");
         const buttonWrapper = this.querySelector(".entry-buttons");
 

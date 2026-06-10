@@ -96,7 +96,7 @@ class TagGroup extends HTMLElement {
                                 "contenteditable",
                                 "true"
                             );
-                            tag._originalText = getTagText(tag); // Set original text before focus
+                            tag._originalText = getTagText(tag);
                             s.focus();
 
                             window
@@ -169,7 +169,7 @@ class TagGroup extends HTMLElement {
         addBtn?.removeEventListener(
             "click",
             this._handleAddTagButtonClick
-        ); // Assuming this was a typo for actual method
+        );
         nameSpan?.removeEventListener(
             "keydown",
             this._handleSpanKeyDown
@@ -178,11 +178,11 @@ class TagGroup extends HTMLElement {
         incBtn?.removeEventListener(
             "click",
             this._boundUpdateMinTags
-        ); // This should be correct
+        );
         decBtn?.removeEventListener(
             "click",
             this._boundUpdateMinTags
-        ); // This should be correct
+        );
 
         addBtn?.removeEventListener("mousedown", (e) =>
             e.stopPropagation()

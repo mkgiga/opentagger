@@ -1,10 +1,5 @@
-// The opentaggerAPI surface.
-//
-// The curated set of operations the dev console (and other modules)
-// can call to drive the app. State references go through state.js;
-// cross-module helpers (filterEntries, logToConsole, slashCommands)
-// still live in app.js for now and are reached via circular import --
-// safe because none are called at module init.
+// The opentaggerAPI surface: the curated set of operations the dev
+// console (and other modules) can call to drive the app.
 
 import { state } from "./state.js";
 import { evaluateExpression } from "./search.js";
@@ -47,13 +42,6 @@ export const opentaggerAPI = {
         const normalizedQuery = query.trim().toLowerCase();
         let selectionCount = 0;
 
-        // Get visible entries to apply selection only to them if query is empty
-        const visibleEntries = Array.from(
-            state.mainContentAreaElement.querySelectorAll(
-                'dataset-entry:not([style*="display: none"])'
-            )
-        );
-
         for (const entry of entries) {
             const isVisible = entry.style.display !== "none";
             let match = false;
@@ -78,7 +66,7 @@ export const opentaggerAPI = {
             }
         }
 
-        // Update g_lastClickedEntryForShiftSelect if only one entry is selected after the operation
+        // Re-anchor shift-select if exactly one entry is selected.
         const currentlySelected =
             opentaggerAPI.getSelectedEntries();
         if (currentlySelected.length === 1) {
@@ -165,7 +153,7 @@ export const opentaggerAPI = {
             }
         }
 
-        // Update g_lastClickedEntryForShiftSelect if only one entry remains selected
+        // Re-anchor shift-select if exactly one entry remains selected.
         const currentlySelected =
             opentaggerAPI.getSelectedEntries();
         if (currentlySelected.length === 1) {
@@ -224,10 +212,7 @@ export const opentaggerAPI = {
             return "No tags provided to remove.";
         }
         if (tagsArray.length === 1 && tagsArray[0] === "*") {
-            // support wildcard removal but only if no other tags are provided for now
-            // Note: This gets tags from the *first* selected entry, which might not be representative.
-            // A better approach for '*' would be to iterate through all selected entries and remove all tags from each.
-            // Let's implement the "remove all from selected" logic directly.
+            // "*" wildcard: remove all tags from each selected entry.
             let totalTagsRemoved = 0;
             let entriesModified = 0;
             for (const entry of selectedEntries) {

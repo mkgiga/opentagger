@@ -86,12 +86,10 @@ export function generatePreferencesUI(
                 numInput.id = `pref-${itemPath}`;
                 numInput.value = value;
                 if (key.toLowerCase().includes("pixels"))
-                    numInput.step = 1000; // Example specific step
+                    numInput.step = 1000;
                 else if (key.toLowerCase().includes("timeout"))
                     numInput.step = 1000;
-                else if (key.toLowerCase().includes("suggestions"))
-                    numInput.step = 1;
-                else numInput.step = 1; // Default step for numbers
+                else numInput.step = 1;
                 numInput.addEventListener("change", (e) =>
                     updatePreference(
                         itemPath,
@@ -113,12 +111,6 @@ export function generatePreferencesUI(
         }
     }
 }
-
-/**
- * @type {{ [id: string]: HTMLAudioElement }}
- */
-
-// Autocomplete for Booru Tags
 
 
 

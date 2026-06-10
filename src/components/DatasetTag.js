@@ -4,8 +4,6 @@ import { getTagText } from "../utils/dom.js";
 import { parseRawTagInput } from "../utils/text.js";
 import { debounce } from "../utils/timing.js";
 import { createContextMenu } from "../ui/contextMenu.js";
-// logToConsole is used inside context-menu
-// callbacks; lives in src/ui/devConsole.js.
 import { logToConsole } from "../ui/devConsole.js";
 
 export class DatasetTag extends HTMLElement {
@@ -37,7 +35,7 @@ export class DatasetTag extends HTMLElement {
         this._debouncedHandleSpanInput = debounce(
             this._boundHandleSpanInput,
             200
-        ); // Debounce input for suggestions
+        );
     }
     connectedCallback() {
         let initialText = "";
@@ -104,7 +102,7 @@ export class DatasetTag extends HTMLElement {
             s.addEventListener(
                 "input",
                 this._debouncedHandleSpanInput
-            ); // Use debounced handler
+            );
         }
         this.addEventListener(
             "dragstart",
@@ -208,11 +206,11 @@ export class DatasetTag extends HTMLElement {
             return;
         }
 
+        // booruTags is already sorted by count descending.
         const matchedTags = state.booruTags
             .filter((tag) =>
                 tag.name.toLowerCase().startsWith(inputText)
             )
-            // .sort((a, b) => b.count - a.count) // Tags are already pre-sorted by count
             .slice(0, state.MAX_SUGGESTIONS);
 
         if (matchedTags.length > 0) {
@@ -289,7 +287,7 @@ export class DatasetTag extends HTMLElement {
             span.textContent = selectedTag.name;
 
             span.contentEditable = "false";
-            // state.globalTagAutocompleteDropdown.hide(); // Already hidden by dropdown's _selectItem
+            // The dropdown already hid itself in _selectItem.
 
             const range = document.createRange();
             const sel = window.getSelection();
@@ -314,7 +312,7 @@ export class DatasetTag extends HTMLElement {
         ) {
             span.textContent = this._originalText;
             span.contentEditable = "false";
-            // state.globalTagAutocompleteDropdown.hide(); // Already hidden by dropdown's Escape handler
+            // The dropdown already hid itself in its Escape handler.
         }
     }
 

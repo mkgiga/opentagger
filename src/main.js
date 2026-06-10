@@ -1,17 +1,10 @@
-// Entry point for the refactored opentagger frontend.
-//
-// During the Vite migration this is intentionally minimal: the heavy
-// lifting still lives in the inline <script> block in index.html. As
-// components and core systems get extracted, they will be imported
-// here and the inline block will shrink toward zero.
+// Entry point for the opentagger frontend.
 
-// Vendor libraries first — app.js reads JSZip, saveAs, CodeMirror
-// off window, so they need to be assigned before app.js runs.
+// Vendor libraries first — the app reads JSZip, saveAs, CodeMirror
+// off window, so they must be assigned before app.js runs.
 import "./vendor.js";
 
-// Stylesheets are imported in roughly the same order they appeared in
-// the original monolithic <style> block, so any specificity-tied
-// cascade outcomes stay unchanged.
+// Stylesheet order matters for specificity-tied cascade outcomes.
 import "./styles/base.css";
 import "./styles/preferences.css";
 import "./styles/splash.css";
@@ -25,6 +18,4 @@ import "./styles/tag-group.css";
 import "./styles/menu.css";
 import "./styles/modal.css";
 
-// App body. Currently a single monolithic module — components and
-// core systems will get peeled out into their own files from here.
 import "./app.js";

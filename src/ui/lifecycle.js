@@ -10,12 +10,9 @@ export function showMainAppUI() {
     if (state.splashScreenElement) {
         state.splashScreenElement.classList.add("hidden");
     }
-    // state.appContainer is now the tab-container, it's always "loaded" after splash
-    // The visibility of its content (tagging or preferences) is handled by the tab-container itself.
 
-    checkDropHintVisibility(); // Still relevant for the tagging tab
+    checkDropHintVisibility();
 
-    // Ensure elements are queried after potential tab switches or initial load
     const currentMainContentArea =
         document.getElementById("main-content-area");
     if (currentMainContentArea) {
@@ -28,8 +25,8 @@ export function showMainAppUI() {
 
     sfx.sfxWelcome.play();
 
-    // If the "Tagging" tab is active and console is visible, refresh CodeMirror
-    const appTabContainer = document.getElementById("app"); // This is the tab-container
+    // Refresh CodeMirror if the tagging tab and console are visible.
+    const appTabContainer = document.getElementById("app");
     if (
         appTabContainer &&
         appTabContainer.activeTab === "tagging"
@@ -38,7 +35,7 @@ export function showMainAppUI() {
             setTimeout(() => {
                 if (state.consoleCodeMirrorInstance)
                     state.consoleCodeMirrorInstance.refresh();
-            }, 50); // Delay refresh slightly
+            }, 50);
         }
     }
 }
@@ -67,7 +64,7 @@ export function clearWorkspaceForNewProject() {
         document.getElementById("search-bar");
     if (currentSearchInput) {
         currentSearchInput.value = "";
-        filterEntries(""); // Make sure filterEntries uses the potentially new state.searchInput if DOM was cleared
+        filterEntries("");
     }
 
     opentaggerAPI.deselectAllEntries(true);

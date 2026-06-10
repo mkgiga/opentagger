@@ -311,47 +311,20 @@ export function customCodeMirrorHints(editor, options) {
     return cmJsHintResult;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 export function toggleDevConsole(focusInput = true) {
     if (!state.devConsoleElement || !state.mainView) return;
 
     state.isConsoleVisible = !state.isConsoleVisible;
     if (state.isConsoleVisible) {
-        // Ensure state.mainView is the flex container for the console
+        // The console is expected to be a direct child of main-view.
         const consoleParent = state.devConsoleElement.parentElement;
         if (
             consoleParent !== state.mainView &&
             state.mainView.contains(state.devConsoleElement)
         ) {
-            // This case should ideally not happen if HTML structure is correct
             console.warn(
                 "Developer console is not a direct child of main-view. Layout might be unexpected."
             );
-        } else if (consoleParent !== state.mainView) {
-            // If console is elsewhere, this logic might need adjustment or be removed
-            // For now, assuming it's meant to be part of state.mainView's flex layout
         }
 
         const mainViewHeight = state.mainView.clientHeight;
@@ -387,8 +360,7 @@ export function toggleDevConsole(focusInput = true) {
         }
     }
 
-    // Refresh CodeMirror after transition if it became visible
-    // and ensure focus if requested.
+    // Refresh CodeMirror after the show/hide transition finishes.
     setTimeout(() => {
         if (state.isConsoleVisible && state.consoleCodeMirrorInstance) {
             state.consoleCodeMirrorInstance.refresh();

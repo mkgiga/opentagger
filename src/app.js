@@ -1,19 +1,13 @@
-// Application bootstrap.
-//
-// Everything else has been peeled out into focused modules under
-// src/{components,core,io,ui,utils}/. This file is now just (a) the
-// import side-effects that register web components and run the audio
-// init, and (b) the one big DOMContentLoaded handler that wires the
-// DOM to all of the above.
+// Application bootstrap: side-effect imports that register web
+// components, plus the DOMContentLoaded handler that wires the DOM
+// to the modules under src/.
 
-// State + curated API surface.
 import { state } from "./core/state.js";
 import { preferences } from "./core/preferences.js";
 import { opentaggerAPI } from "./core/api.js";
 import { evaluateExpression } from "./core/search.js";
 import { debounce } from "./utils/timing.js";
 
-// UI factories.
 import { sfx } from "./ui/sfx.js";
 import { createContextMenu } from "./ui/contextMenu.js";
 import { showConfirmationModal } from "./ui/modal.js";
@@ -29,7 +23,6 @@ import {
     clearWorkspaceForNewProject,
 } from "./ui/lifecycle.js";
 
-// I/O (CSV load, autotag, project/dataset save+load).
 import { loadBooruTags } from "./io/booruTags.js";
 import { handleAutotagAllClick } from "./io/autotag.js";
 import { saveProject, handleProjectFileSelect } from "./io/project.js";
@@ -38,8 +31,8 @@ import {
     confirmAndExportDataset,
 } from "./io/datasetZip.js";
 
-// Web components -- imported for side effects only; each module
-// registers its custom element on first load.
+// Web components — imported for side effects; each registers its
+// custom element on load.
 import "./components/TabContainer.js";
 import "./components/AutocompleteDropdown.js";
 import "./components/MenuItem.js";
@@ -51,11 +44,11 @@ import "./components/TagGroup.js";
 
 
 document.addEventListener("DOMContentLoaded", () => {
-    state.appContainer = document.getElementById("app"); // Now the tab-container
+    state.appContainer = document.getElementById("app"); // the <tab-container>
     state.splashScreenElement = document.getElementById("splash-screen");
 
-    // These elements are inside the "tagging" tab, so they might not be immediately available
-    // if another tab is active by default. Query them when needed or ensure tagging tab is default.
+    // These live inside the "tagging" tab and may be null until that
+    // tab is active.
     state.mainView = document.getElementById("main-view");
     state.mainContentAreaElement =
         document.getElementById("main-content-area");
@@ -63,9 +56,6 @@ document.addEventListener("DOMContentLoaded", () => {
     if (state.mainContentAreaElement) {
         state.dropHint =
             state.mainContentAreaElement.querySelector(".drop-hint");
-    } else {
-        // This might happen if "preferences" tab is active first.
-        // console.warn("state.mainContentAreaElement not found during DOMContentLoaded (possibly due to inactive tab).");
     }
 
     state.searchInput = document.getElementById("search-bar");
@@ -243,7 +233,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 return;
             }
 
-            // Check if focus is inside an input field that is NOT the console's CodeMirror instance
             const targetTagName =
                 event.target.tagName.toLowerCase();
             const isGenericInput =
@@ -256,7 +245,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     state.consoleCodeMirrorInstance.getInputField();
 
             if (isGenericInput && !isConsoleInput) {
-                return; // Don't toggle console if focus is in a regular input/textarea
+                return;
             }
             toggleDevConsole();
         }
@@ -326,16 +315,13 @@ document.addEventListener("DOMContentLoaded", () => {
         );
     }
 
-    // Drag and drop for main-view (which is inside tagging-panel)
-    // This needs to be attached to state.mainView if it exists, or its parent panel.
+    // File drag-and-drop onto the tagging panel.
     const taggingPanel = document.getElementById("tagging-panel");
     if (taggingPanel) {
-        // Attach to the panel that contains state.mainView
         taggingPanel.addEventListener("dragenter", (e) => {
             if (e.dataTransfer.types.includes("Files")) {
                 e.preventDefault();
                 e.stopPropagation();
-                // Add visual cue to the panel or a specific drop zone within it
                 if (state.mainView) state.mainView.classList.add("drag-over");
                 else taggingPanel.classList.add("drag-over"); // Fallback
                 e.dataTransfer.dropEffect = "copy";
@@ -399,7 +385,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function handleFiles(files) {
         if (!state.mainContentAreaElement || !state.searchInput) {
-            // Try to get them again if they were not available initially
+            // Re-query in case they weren't available at startup.
             if (!state.mainContentAreaElement)
                 state.mainContentAreaElement =
                     document.getElementById("main-content-area");
@@ -499,28 +485,6 @@ document.addEventListener("DOMContentLoaded", () => {
             e.stopPropagation();
 
             if (
-                state.splashScreenElement &&
-                !state.splashScreenElement.classList.contains("hidden")
-            ) {
-                const buttonAction = button.textContent
-                    .trim()
-                    .toLowerCase();
-
-                // If splash screen is visible, only allow File > New/Load actions
-                // or actions that implicitly hide the splash screen.
-                // For now, let's assume most menu actions should proceed to show the main app.
-                // A more refined logic could be added here if specific menus should be disabled.
-                if (
-                    buttonAction !== "file" &&
-                    buttonAction !== "help"
-                ) {
-                    // Example: allow File and Help
-                    // Potentially show a message or do nothing if other menus are clicked on splash
-                    // For now, we'll let it try to open the menu, which might trigger showMainAppUI
-                }
-            }
-
-            if (
                 state.currentContextMenu &&
                 state.currentContextMenu.classList.contains("visible") &&
                 state.currentContextMenu._ownerButton === button
@@ -538,8 +502,7 @@ document.addEventListener("DOMContentLoaded", () => {
                             label: "New Project",
                             callback: () => {
                                 clearWorkspaceForNewProject();
-                                showMainAppUI(); // Ensure main app is visible
-                                // If tab-container is used, ensure 'tagging' tab is active
+                                showMainAppUI();
                                 const appTabs =
                                     document.getElementById("app");
                                 if (
@@ -645,14 +608,6 @@ document.addEventListener("DOMContentLoaded", () => {
                                 document.getElementById("app")
                                     ?.activeTab !== "tagging",
                         },
-                        // { type: "divider" },
-                        // { label: "Preferences...", callback: () => {
-                        //     const appTabs = document.getElementById('app');
-                        //     if (appTabs && typeof appTabs.activateTab === 'function') {
-                        //        appTabs.activateTab(appTabs.sanitizeId('preferences'));
-                        //     }
-                        //     showMainAppUI(); // Ensure app is visible if coming from splash
-                        // }},
                     ];
                     break;
                 case "view":
@@ -705,10 +660,8 @@ document.addEventListener("DOMContentLoaded", () => {
         ) {
             const onSplash = e.target.closest("#splash-screen");
             if (!onSplash) {
-                // If context menu is outside splash, prevent it
                 e.preventDefault();
             }
-            // Allow native context menu on splash screen elements themselves
             return;
         }
 
@@ -734,8 +687,6 @@ document.addEventListener("DOMContentLoaded", () => {
             state.globalTagAutocompleteDropdown &&
             state.globalTagAutocompleteDropdown.contains(e.target)
         ) {
-            // Allow context menu on the autocomplete dropdown itself if needed (currently not)
-            // Or prevent default here: e.preventDefault();
             return;
         }
 
@@ -762,7 +713,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const generalItems = [
             {
-                label: "Add Group", // Changed from "Add Tags"
+                label: "Add Group",
                 callback: () => {
                     if (addGroupButton) addGroupButton.click();
                 },
@@ -819,9 +770,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    // Initial check for drop hint visibility if app is already "loaded" (splash hidden)
-    // This is less relevant now as tab-container handles initial display.
-    // The checkDropHintVisibility will be called by showMainAppUI or when files are added.
     if (
         state.splashScreenElement &&
         state.splashScreenElement.classList.contains("hidden")
@@ -829,8 +777,8 @@ document.addEventListener("DOMContentLoaded", () => {
         checkDropHintVisibility();
     }
 
-    // Observe mainContentArea for changes to update state.dropHint and entry requirements
-    // This needs to be robust if state.mainContentAreaElement is initially null (e.g. preferences tab active)
+    // Watches main-content-area for entry additions/removals. The
+    // element may not exist yet (e.g. preferences tab active first).
     const setupMainContentObserver = () => {
         if (!state.mainContentAreaElement) {
             state.mainContentAreaElement =
@@ -890,7 +838,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 "entry-deleted",
                 () => checkDropHintVisibility()
             );
-            // Initial check after observer is set up
             checkDropHintVisibility();
             for (const entry of state.mainContentAreaElement.querySelectorAll(
                 "dataset-entry"
@@ -904,14 +851,14 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     };
 
-    // If the app container is a tab-container, set up observer when tagging tab becomes active
+    // Set up the observer once the tagging tab becomes active.
     if (state.appContainer && state.appContainer.tagName === "TAB-CONTAINER") {
         if (state.appContainer.activeTab === "tagging") {
             setupMainContentObserver();
         }
         state.appContainer.addEventListener("tab-change", (e) => {
             if (e.detail.activeTabId === "tagging") {
-                // Ensure elements are re-queried if they weren't available before
+                // Re-query elements that weren't available before.
                 if (!state.mainContentAreaElement)
                     state.mainContentAreaElement =
                         document.getElementById(
@@ -947,7 +894,6 @@ document.addEventListener("DOMContentLoaded", () => {
                         "true"
                     );
                 } else if (state.mainContentAreaElement) {
-                    // Refresh visibility and requirements if tab is re-activated
                     checkDropHintVisibility();
                     for (const entry of state.mainContentAreaElement.querySelectorAll(
                         "dataset-entry"
@@ -955,24 +901,15 @@ document.addEventListener("DOMContentLoaded", () => {
                         entry.checkGroupRequirementsAndUpdateVisuals();
                     }
                 }
-                // Refresh CodeMirror if console is visible
                 if (state.isConsoleVisible && state.consoleCodeMirrorInstance) {
                     setTimeout(() => {
                         if (state.consoleCodeMirrorInstance)
                             state.consoleCodeMirrorInstance.refresh();
-                    }, 50); // Delay refresh slightly
+                    }, 50);
                 }
             }
         });
     } else {
-        // Fallback for non-tab-container structure (original behavior)
         setupMainContentObserver();
     }
-}); // End of DOMContentLoaded
-
-
-
-
-
-
-
+});

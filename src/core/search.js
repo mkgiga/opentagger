@@ -1,9 +1,5 @@
-// Search expression engine.
-//
-// Pure parsing/evaluation pieces of the search syntax. The actual
-// "apply filter to the DOM" function (filterEntries) still lives in
-// app.js because it touches a lot of state -- it will move here once
-// the rest of the state-dependent layers settle.
+// Search expression engine: pure parsing/evaluation of the search
+// syntax. DOM filtering (filterEntries) lives in ui/search.js.
 
 /**
  * Recursively evaluate a boolean tag-search expression against a list
