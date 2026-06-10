@@ -44,8 +44,8 @@ function registerIpcHandlers() {
     ipcMain.handle("tagger:download", (_event, modelId) =>
         tagger.downloadModel(modelId, sendProgress)
     );
-    ipcMain.handle("tagger:run", (_event, modelId, pixels) =>
-        tagger.runAutotag(modelId, pixels, sendProgress)
+    ipcMain.handle("tagger:run", (_event, modelId, pixels, options) =>
+        tagger.runAutotag(modelId, pixels, sendProgress, options)
     );
 }
 

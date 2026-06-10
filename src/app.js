@@ -3,7 +3,6 @@
 // to the modules under src/.
 
 import { state } from "./core/state.js";
-import { preferences } from "./core/preferences.js";
 import { opentaggerAPI } from "./core/api.js";
 import { evaluateExpression } from "./core/search.js";
 import { debounce } from "./utils/timing.js";
@@ -75,7 +74,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const preferencesPanel =
         document.getElementById("preferences-panel");
     if (preferencesPanel) {
-        generatePreferencesUI(preferences, preferencesPanel);
+        generatePreferencesUI(preferencesPanel);
     } else {
         console.error("Preferences panel element not found.");
     }

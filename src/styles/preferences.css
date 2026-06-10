@@ -1,3 +1,62 @@
+.preferences-scope-switcher {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 20px;
+}
+
+.preferences-scope-switcher button {
+    padding: 6px 14px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background-color: #f4f4f4;
+    cursor: pointer;
+    font-size: 0.9em;
+    color: #444;
+}
+
+.preferences-scope-switcher button:hover {
+    background-color: #e8e8e8;
+}
+
+.preferences-scope-switcher button.active {
+    background-color: #fff;
+    border-color: var(--splash-ide-accent, #007acc);
+    color: var(--splash-ide-accent, #007acc);
+    font-weight: bold;
+}
+
+.preferences-scope-hint {
+    margin-left: 8px;
+    font-size: 0.8em;
+    color: #888;
+}
+
+/* A project-scope item whose value overrides the global one. */
+.preference-item.overridden label {
+    color: var(--splash-ide-accent, #007acc);
+    font-weight: bold;
+}
+
+.preference-item .preference-reset {
+    flex-shrink: 0;
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-size: 16px;
+    color: #999;
+    padding: 2px;
+    visibility: hidden;
+}
+
+.preference-item.overridden .preference-reset {
+    visibility: visible;
+}
+
+.preference-item .preference-reset:hover {
+    color: var(--splash-ide-accent, #007acc);
+}
+
 .preferences-section {
     margin-bottom: 25px;
     padding: 15px;

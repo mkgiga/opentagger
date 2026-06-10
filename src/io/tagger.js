@@ -11,7 +11,10 @@
 //      plain-browser contexts or models the native engine lacks.
 
 import { state } from "../core/state.js";
-import { preferences } from "../core/preferences.js";
+import {
+    getPreference,
+    defaultNodeAt,
+} from "../core/preferences.js";
 import { showConfirmationModal } from "../ui/modal.js";
 import {
     setStatus,
@@ -50,7 +53,27 @@ function downloadConfirmMessage(label, sizeMB) {
 }
 
 function selectedModelId() {
-    return preferences.tagging.autotagging.autotaggingModel.value;
+    return getPreference("tagging.autotagging.autotaggingModel");
+}
+
+/**
+ * Collect the user's threshold preferences for a model as the
+ * { category: cutoff } shape the main-process tagger expects:
+ * "generalThreshold" -> "general", etc. Returns only categories the
+ * preferences tree defines for this model.
+ */
+function thresholdPreferences(modelId) {
+    const base = `tagging.autotagging.models.${modelId}`;
+    const section = defaultNodeAt(base);
+    if (typeof section !== "object" || section === null) return {};
+    const thresholds = {};
+    for (const key of Object.keys(section)) {
+        if (key.endsWith("Threshold")) {
+            thresholds[key.slice(0, -"Threshold".length)] =
+                getPreference(`${base}.${key}`);
+        }
+    }
+    return thresholds;
 }
 
 function legacyEndpointPath(modelId) {
@@ -267,7 +290,9 @@ async function preprocess(blob, input) {
 
 async function autotagNative(imageBlob, modelId, inputSpec) {
     const pixels = await preprocess(imageBlob, inputSpec);
-    const result = await native.taggerRun(modelId, pixels);
+    const result = await native.taggerRun(modelId, pixels, {
+        thresholds: thresholdPreferences(modelId),
+    });
     if (!result.success) {
         throw new Error(result.error || "Autotagging failed.");
     }

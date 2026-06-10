@@ -10,8 +10,8 @@ contextBridge.exposeInMainWorld("opentaggerNative", {
         ipcRenderer.invoke("tagger:status", modelId),
     taggerDownload: (modelId) =>
         ipcRenderer.invoke("tagger:download", modelId),
-    taggerRun: (modelId, pixels) =>
-        ipcRenderer.invoke("tagger:run", modelId, pixels),
+    taggerRun: (modelId, pixels, options) =>
+        ipcRenderer.invoke("tagger:run", modelId, pixels, options),
     onTaggerProgress: (callback) => {
         const listener = (_event, payload) => callback(payload);
         ipcRenderer.on("tagger:progress", listener);

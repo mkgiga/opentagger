@@ -1,6 +1,11 @@
 // Project save/load (.loraproj ZIPs containing images + project.json).
 
 import { state } from "../core/state.js";
+import {
+    getProjectOverrides,
+    setProjectOverrides,
+} from "../core/preferences.js";
+import { refreshPreferencesUI } from "../ui/preferencesPanel.js";
 import { sanitizeFilename } from "../utils/text.js";
 import { showConfirmationModal } from "../ui/modal.js";
 import { showMainAppUI, clearWorkspaceForNewProject } from "../ui/lifecycle.js";
@@ -110,6 +115,7 @@ export async function saveProject() {
         version: 1,
         groups: groups,
         entries: entries,
+        preferences: getProjectOverrides(),
     };
     zip.file("project.json", JSON.stringify(projectData, null, 2));
 
@@ -318,6 +324,10 @@ export async function loadProjectFromZip(zipData) {
     }
 
     clearWorkspaceForNewProject();
+
+    // Older project files (or none) simply yield no overrides.
+    setProjectOverrides(projectData.preferences ?? {});
+    refreshPreferencesUI();
 
     console.log(`Loading ${projectData.groups.length} groups...`);
     const groupListContainer =

@@ -3,8 +3,10 @@
 
 import { state } from "../core/state.js";
 import { opentaggerAPI } from "../core/api.js";
+import { clearProjectOverrides } from "../core/preferences.js";
 import { sfx } from "./sfx.js";
 import { filterEntries, checkDropHintVisibility } from "./search.js";
+import { refreshPreferencesUI } from "./preferencesPanel.js";
 
 export function showMainAppUI() {
     if (state.splashScreenElement) {
@@ -68,6 +70,9 @@ export function clearWorkspaceForNewProject() {
     }
 
     opentaggerAPI.deselectAllEntries(true);
+
+    clearProjectOverrides();
+    refreshPreferencesUI();
 
     checkDropHintVisibility();
     console.log("Workspace cleared for new project.");

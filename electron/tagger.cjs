@@ -296,8 +296,10 @@ function tensorDims(input) {
 }
 
 // `pixels` is a Float32Array preprocessed by the renderer according to
-// the model's `input` spec.
-async function runAutotag(modelId, pixels, progress) {
+// the model's `input` spec. `options.thresholds` ({ category: cutoff })
+// overrides the spec's defaults — that's how user threshold
+// preferences reach inference.
+async function runAutotag(modelId, pixels, progress, options = {}) {
     const spec = MODELS[modelId];
     if (!spec) {
         return {
@@ -329,12 +331,16 @@ async function runAutotag(modelId, pixels, progress) {
         });
         const scores = results[session.outputNames[0]].data;
 
+        const thresholds = {
+            ...spec.thresholds,
+            ...(options?.thresholds ?? {}),
+        };
         const matched = [];
         const count = Math.min(scores.length, vocabulary.length);
         for (let i = 0; i < count; i++) {
             const entry = vocabulary[i];
             if (!entry || entry.category === null) continue;
-            const threshold = spec.thresholds[entry.category];
+            const threshold = thresholds[entry.category];
             if (threshold === undefined) continue;
             const score =
                 spec.output.activation === "sigmoid"
