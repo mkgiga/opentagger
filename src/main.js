@@ -17,5 +17,6 @@ import "./styles/autocomplete.css";
 import "./styles/tag-group.css";
 import "./styles/menu.css";
 import "./styles/modal.css";
+import "./styles/status-bar.css";
 
 import "./app.js";

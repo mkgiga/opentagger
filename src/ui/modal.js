@@ -7,9 +7,10 @@
 /**
  * Show a confirmation/info modal with a message and a list of buttons.
  * Each button: { text, class?, onClick? }. Clicking the overlay
- * background dismisses without invoking any callback.
+ * background dismisses without invoking any button callback; pass
+ * `onDismiss` to be notified when that happens.
  */
-export function showConfirmationModal(message, buttons) {
+export function showConfirmationModal(message, buttons, onDismiss) {
     document.querySelector(".modal-overlay")?.remove();
 
     const overlay = document.createElement("div");
@@ -46,6 +47,7 @@ export function showConfirmationModal(message, buttons) {
     overlay.addEventListener("click", (e) => {
         if (e.target === overlay) {
             overlay.remove();
+            if (typeof onDismiss === "function") onDismiss();
         }
     });
 

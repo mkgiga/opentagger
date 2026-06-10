@@ -58,6 +58,13 @@
     margin-bottom: 10px;
 }
 
+#autotag-all-button:disabled,
+dataset-entry .autotag-entry:disabled {
+    opacity: 0.45;
+    cursor: default;
+    pointer-events: none;
+}
+
 #autotag-all-button {
     background: none;
     border: none;

@@ -1,5 +1,6 @@
 :root {
     --menu-bar-height: 28px;
+    --status-bar-height: 24px;
     --splash-ide-bg: #f3f3f3;
     --splash-ide-content-bg: #fcfcfc;
     --splash-ide-text-primary: #222222;
@@ -53,7 +54,9 @@ body {
     display: flex;
     flex-grow: 1;
     overflow: hidden;
-    height: calc(100vh - var(--menu-bar-height));
+    height: calc(
+        100vh - var(--menu-bar-height) - var(--status-bar-height)
+    );
 }
 
 #tagging-panel {

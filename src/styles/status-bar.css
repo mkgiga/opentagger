@@ -1,0 +1,70 @@
+#status-bar {
+    height: var(--status-bar-height);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 0 10px;
+    background-color: #e0e0e0;
+    border-top: 1px solid #ccc;
+    font-size: 0.75rem;
+    color: #444;
+    user-select: none;
+}
+
+#status-bar-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#status-bar-progress {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    max-width: 65%;
+}
+
+#status-bar-progress.hidden {
+    display: none;
+}
+
+#status-bar-progress-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#status-bar-progress .progress-track {
+    width: 160px;
+    height: 6px;
+    flex-shrink: 0;
+    border-radius: 3px;
+    background-color: #c8c8c8;
+    overflow: hidden;
+    position: relative;
+}
+
+#status-bar-progress .progress-fill {
+    height: 100%;
+    width: 0%;
+    background-color: var(--splash-ide-accent, #007acc);
+    transition: width 0.2s;
+}
+
+#status-bar-progress.indeterminate .progress-fill {
+    width: 35%;
+    position: absolute;
+    animation: status-progress-slide 1.2s linear infinite;
+}
+
+@keyframes status-progress-slide {
+    from {
+        left: -35%;
+    }
+    to {
+        left: 100%;
+    }
+}
