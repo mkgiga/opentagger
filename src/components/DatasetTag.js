@@ -1,7 +1,11 @@
 import { state } from "../core/state.js";
 import { opentaggerAPI } from "../core/api.js";
 import { getTagText } from "../utils/dom.js";
-import { parseRawTagInput } from "../utils/text.js";
+import {
+    parseRawTagInput,
+    prettifyBooruTag,
+} from "../utils/text.js";
+import { getPreference } from "../core/preferences.js";
 import { debounce } from "../utils/timing.js";
 import { createContextMenu } from "../ui/contextMenu.js";
 import { logToConsole } from "../ui/devConsole.js";
@@ -206,10 +210,12 @@ export class DatasetTag extends HTMLElement {
             return;
         }
 
-        // booruTags is already sorted by count descending.
+        // booruTags is already sorted by count descending. CSV names
+        // use underscores, so also match input typed with spaces.
+        const underscored = inputText.replaceAll(" ", "_");
         const matchedTags = state.booruTags
             .filter((tag) =>
-                tag.name.toLowerCase().startsWith(inputText)
+                tag.name.toLowerCase().startsWith(underscored)
             )
             .slice(0, state.MAX_SUGGESTIONS);
 
@@ -284,7 +290,12 @@ export class DatasetTag extends HTMLElement {
             e.target === state.globalTagAutocompleteDropdown
         ) {
             const selectedTag = e.detail;
-            span.textContent = selectedTag.name;
+            span.textContent = prettifyBooruTag(
+                selectedTag.name,
+                getPreference(
+                    "tagging.autocompleteSuggestions.replaceUnderscores"
+                )
+            );
 
             span.contentEditable = "false";
             // The dropdown already hid itself in _selectItem.

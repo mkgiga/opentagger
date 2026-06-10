@@ -1,5 +1,22 @@
 // Pure string / parsing helpers.
 
+// Tags that are kaomoji keep their underscores when prettifying.
+// Mirrors the list in electron/tagger.cjs (main process; the module
+// formats can't be shared across the boundary).
+const KAOMOJI = new Set([
+    "0_0", "(o)_(o)", "+_+", "+_-", "._.", "<o>_<o>", "<|>_<|>",
+    "=_=", ">_<", "3_3", "6_9", ">_o", "@_@", "^_^", "o_o", "u_u",
+    "x_x", "|_|", "||_||",
+]);
+
+/** Booru-style tag name -> display form ("red_background" -> "red
+ * background"), leaving kaomoji untouched. No-op when `enabled` is
+ * false. */
+export function prettifyBooruTag(name, enabled = true) {
+    if (!enabled || KAOMOJI.has(name)) return name;
+    return name.replaceAll("_", " ");
+}
+
 /** Convert "minimumPixelsSum" -> "Minimum Pixels Sum" for UI labels. */
 export function keyToLabel(key) {
     if (typeof key !== "string") return "";

@@ -321,8 +321,9 @@ async function getSession(modelId, spec, progress) {
     return entry;
 }
 
-function prettifyTag(name) {
-    return KAOMOJI.has(name) ? name : name.replaceAll("_", " ");
+function prettifyTag(name, replaceUnderscores) {
+    if (!replaceUnderscores || KAOMOJI.has(name)) return name;
+    return name.replaceAll("_", " ");
 }
 
 function tensorDims(input) {
@@ -331,10 +332,10 @@ function tensorDims(input) {
         : [1, input.size, input.size, 3];
 }
 
-// `pixels` is a Float32Array preprocessed by the renderer according to
-// the model's `input` spec. `options.thresholds` ({ category: cutoff })
-// overrides the spec's defaults — that's how user threshold
-// preferences reach inference.
+// `pixels` is a Float32Array preprocessed by the renderer according
+// to the model's `input` spec. User preferences arrive via `options`:
+// `thresholds` ({ category: cutoff }) overrides the spec's defaults,
+// `replaceUnderscores` (default true) controls tag-name prettifying.
 async function runAutotag(modelId, pixels, progress, options = {}) {
     const spec = MODELS[modelId];
     if (!spec) {
@@ -371,6 +372,7 @@ async function runAutotag(modelId, pixels, progress, options = {}) {
             ...spec.thresholds,
             ...(options?.thresholds ?? {}),
         };
+        const replaceUnderscores = options?.replaceUnderscores ?? true;
         const matched = [];
         const count = Math.min(scores.length, vocabulary.length);
         for (let i = 0; i < count; i++) {
@@ -383,7 +385,10 @@ async function runAutotag(modelId, pixels, progress, options = {}) {
                     ? 1 / (1 + Math.exp(-scores[i]))
                     : scores[i];
             if (score >= threshold) {
-                matched.push({ name: prettifyTag(entry.name), score });
+                matched.push({
+                    name: prettifyTag(entry.name, replaceUnderscores),
+                    score,
+                });
             }
         }
         matched.sort((a, b) => b.score - a.score);

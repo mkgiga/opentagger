@@ -28,6 +28,9 @@ export const PREFERENCE_DEFAULTS = {
         autocompleteSuggestions: {
             enabled: true,
             maxSuggestions: 10,
+            // Booru CSV tag names use underscores; replace them with
+            // spaces when a suggestion is inserted.
+            replaceUnderscores: true,
             csvFile: {
                 "@type": "select",
                 value: "danbooru_e621_merged.csv",
@@ -41,6 +44,10 @@ export const PREFERENCE_DEFAULTS = {
         autotagging: {
             enabled: true,
             timeout: 30000,
+            // Model vocabularies use underscores (booru style);
+            // replace them with spaces in added tags (kaomoji like
+            // ">_<" are always kept as-is).
+            replaceUnderscores: true,
             autotaggingModel: {
                 "@type": "select",
                 value: "wd-vit-tagger-v3",

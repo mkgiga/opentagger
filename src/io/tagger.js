@@ -292,6 +292,9 @@ async function autotagNative(imageBlob, modelId, inputSpec) {
     const pixels = await preprocess(imageBlob, inputSpec);
     const result = await native.taggerRun(modelId, pixels, {
         thresholds: thresholdPreferences(modelId),
+        replaceUnderscores: getPreference(
+            "tagging.autotagging.replaceUnderscores"
+        ),
     });
     if (!result.success) {
         throw new Error(result.error || "Autotagging failed.");
