@@ -7,9 +7,17 @@
 // pixel data sent from the renderer.
 //
 // The renderer does the image decoding/resizing (it has Canvas; the
-// main process doesn't) and sends a Float32Array in the model's input
-// layout. Tag mapping and thresholding happen here so the renderer
-// gets back a plain list of tag names.
+// main process doesn't) and sends a Float32Array built from the
+// model's `input` spec, which it receives via getStatus. Tag mapping
+// and thresholding happen here so the renderer gets back a plain list
+// of tag names.
+//
+// Models are described declaratively in MODELS — one generic pipeline
+// interprets the spec, so supporting a new tagger is (usually) just a
+// new registry entry. If a model ever needs real logic that the spec
+// can't express, give its entry an optional function field (e.g.
+// `postprocess`) and call it from the pipeline — don't fork the
+// pipeline per model.
 
 const { app } = require("electron");
 const ort = require("onnxruntime-node");
@@ -25,30 +33,65 @@ const { join } = require("node:path");
 const { pipeline } = require("node:stream/promises");
 const { Readable } = require("node:stream");
 
-// Model registry. `null` marks a model the UI knows about but that has
-// no ONNX build yet (JTP only ships PyTorch safetensors; see
-// autotag/export_jtp_onnx.py for producing one).
+// Model registry.
+//
+// Spec shape:
+//   label             display name
+//   approxDownloadMB  shown in the consent dialog
+//   files             { filename: url } — all downloaded on first use
+//   input             how the renderer must preprocess pixels:
+//     size            square edge in px
+//     layout          "nhwc" | "nchw"  (tensor dims [1,s,s,3] / [1,3,s,s])
+//     channelOrder    "bgr" | "rgb"
+//     padColor        0-255 grayscale fill behind non-square images
+//     normalize       null = raw 0-255 floats, or { mean, std } applied
+//                     to 0-1 scaled values, uniform across channels
+//   output            { activation: "none" | "sigmoid" } — "none" means
+//                     the graph already emits probabilities
+//   vocabulary        { file, format: "wd-csv" | "jtp-json" }
+//   thresholds        per-category score cutoffs; categories a model's
+//                     vocabulary lacks are simply never matched
+//
+// `null` marks a model the UI knows about but that has no ONNX build
+// yet (JTP only ships PyTorch safetensors; autotag/export_jtp_onnx.py
+// produces one — host it, then fill in the entry like:
+//   {
+//     label: "RedRocket JTP PILOT",
+//     approxDownloadMB: 1700,
+//     files: { "model.onnx": "<hosted url>", "tags.json": "<hosted url>" },
+//     input: { size: 384, layout: "nchw", channelOrder: "rgb",
+//              padColor: 128, normalize: { mean: 0.5, std: 0.5 } },
+//     output: { activation: "sigmoid" },
+//     vocabulary: { file: "tags.json", format: "jtp-json" },
+//     thresholds: { general: 0.2 },
+//   }
 const MODELS = {
     "wd-vit-tagger-v3": {
         label: "WD ViT Tagger v3",
+        approxDownloadMB: 400,
         files: {
             "model.onnx":
                 "https://huggingface.co/SmilingWolf/wd-vit-tagger-v3/resolve/main/model.onnx",
             "selected_tags.csv":
                 "https://huggingface.co/SmilingWolf/wd-vit-tagger-v3/resolve/main/selected_tags.csv",
         },
-        approxDownloadMB: 400,
-        inputSize: 448,
+        input: {
+            size: 448,
+            layout: "nhwc",
+            channelOrder: "bgr",
+            padColor: 255,
+            normalize: null,
+        },
+        output: { activation: "none" },
+        vocabulary: { file: "selected_tags.csv", format: "wd-csv" },
+        thresholds: { general: 0.35, character: 0.85 },
     },
     it_so400m_patch14_siglip_384: null,
 };
 
-// wd-tagger conventions: category ids in selected_tags.csv and the
-// usual confidence thresholds for each.
-const CATEGORY_GENERAL = 0;
-const CATEGORY_CHARACTER = 4;
-const GENERAL_THRESHOLD = 0.35;
-const CHARACTER_THRESHOLD = 0.85;
+// wd-csv category ids -> threshold keys. Category 9 (rating) has no
+// entry on purpose: rating tags are never emitted.
+const WD_CSV_CATEGORIES = { 0: "general", 4: "character" };
 
 // Tags that are kaomoji keep their underscores; everything else gets
 // underscores converted to spaces (matching common wd-tagger usage).
@@ -58,7 +101,7 @@ const KAOMOJI = new Set([
     "x_x", "|_|", "||_||",
 ]);
 
-const sessions = new Map(); // modelId -> { session, tags }
+const sessions = new Map(); // modelId -> { session, vocabulary }
 let downloadPromise = null;
 
 function modelDir(modelId) {
@@ -76,6 +119,7 @@ function getStatus(modelId) {
         downloading: Boolean(downloadPromise),
         approxDownloadMB: spec ? spec.approxDownloadMB : 0,
         label: spec ? spec.label : modelId,
+        input: spec ? spec.input : null,
     };
 }
 
@@ -156,25 +200,45 @@ function downloadModel(modelId, progress) {
     return downloadPromise;
 }
 
-// selected_tags.csv: tag_id,name,category,count
-function loadTags(modelId) {
-    const csv = readFileSync(
-        join(modelDir(modelId), "selected_tags.csv"),
+// Returns [{ name, category }] where category is a key of the model's
+// `thresholds` (entries with unknown categories never match).
+function loadVocabulary(modelId, spec) {
+    const raw = readFileSync(
+        join(modelDir(modelId), spec.vocabulary.file),
         "utf-8"
     );
-    const tags = [];
-    const lines = csv.split("\n");
-    for (let i = 1; i < lines.length; i++) {
-        const line = lines[i].trim();
-        if (!line) continue;
-        const parts = line.split(",");
-        if (parts.length < 3) continue;
-        tags.push({
-            name: parts[1],
-            category: Number(parts[2]),
-        });
+
+    switch (spec.vocabulary.format) {
+        case "wd-csv": {
+            // tag_id,name,category,count
+            const entries = [];
+            const lines = raw.split("\n");
+            for (let i = 1; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if (!line) continue;
+                const parts = line.split(",");
+                if (parts.length < 3) continue;
+                entries.push({
+                    name: parts[1],
+                    category: WD_CSV_CATEGORIES[Number(parts[2])] ?? null,
+                });
+            }
+            return entries;
+        }
+        case "jtp-json": {
+            // { "tag_name": class_index } — flat, all "general"
+            const map = JSON.parse(raw);
+            const entries = [];
+            for (const [name, index] of Object.entries(map)) {
+                entries[index] = { name, category: "general" };
+            }
+            return entries;
+        }
+        default:
+            throw new Error(
+                `Unknown vocabulary format: ${spec.vocabulary.format}`
+            );
     }
-    return tags;
 }
 
 function preferredExecutionProviders() {
@@ -188,13 +252,13 @@ function preferredExecutionProviders() {
     }
 }
 
-async function getSession(modelId, progress) {
+async function getSession(modelId, spec, progress) {
     if (sessions.has(modelId)) return sessions.get(modelId);
 
     const modelPath = join(modelDir(modelId), "model.onnx");
     progress({
         phase: "load",
-        message: `Loading ${MODELS[modelId].label} (first run takes a moment)…`,
+        message: `Loading ${spec.label} (first run takes a moment)…`,
         percent: null,
     });
 
@@ -216,7 +280,7 @@ async function getSession(modelId, progress) {
         });
     }
 
-    const entry = { session, tags: loadTags(modelId) };
+    const entry = { session, vocabulary: loadVocabulary(modelId, spec) };
     sessions.set(modelId, entry);
     return entry;
 }
@@ -225,8 +289,14 @@ function prettifyTag(name) {
     return KAOMOJI.has(name) ? name : name.replaceAll("_", " ");
 }
 
-// `pixels` is Float32Array NHWC BGR 0-255, length inputSize².3,
-// produced by the renderer's preprocessing.
+function tensorDims(input) {
+    return input.layout === "nchw"
+        ? [1, 3, input.size, input.size]
+        : [1, input.size, input.size, 3];
+}
+
+// `pixels` is a Float32Array preprocessed by the renderer according to
+// the model's `input` spec.
 async function runAutotag(modelId, pixels, progress) {
     const spec = MODELS[modelId];
     if (!spec) {
@@ -243,13 +313,16 @@ async function runAutotag(modelId, pixels, progress) {
     }
 
     try {
-        const { session, tags } = await getSession(modelId, progress);
-        const size = spec.inputSize;
+        const { session, vocabulary } = await getSession(
+            modelId,
+            spec,
+            progress
+        );
         const data =
             pixels instanceof Float32Array
                 ? pixels
                 : new Float32Array(pixels.buffer ?? pixels);
-        const input = new ort.Tensor("float32", data, [1, size, size, 3]);
+        const input = new ort.Tensor("float32", data, tensorDims(spec.input));
 
         const results = await session.run({
             [session.inputNames[0]]: input,
@@ -257,17 +330,18 @@ async function runAutotag(modelId, pixels, progress) {
         const scores = results[session.outputNames[0]].data;
 
         const matched = [];
-        const count = Math.min(scores.length, tags.length);
+        const count = Math.min(scores.length, vocabulary.length);
         for (let i = 0; i < count; i++) {
-            const { name, category } = tags[i];
-            const score = scores[i];
-            if (
-                (category === CATEGORY_GENERAL &&
-                    score >= GENERAL_THRESHOLD) ||
-                (category === CATEGORY_CHARACTER &&
-                    score >= CHARACTER_THRESHOLD)
-            ) {
-                matched.push({ name: prettifyTag(name), score });
+            const entry = vocabulary[i];
+            if (!entry || entry.category === null) continue;
+            const threshold = spec.thresholds[entry.category];
+            if (threshold === undefined) continue;
+            const score =
+                spec.output.activation === "sigmoid"
+                    ? 1 / (1 + Math.exp(-scores[i]))
+                    : scores[i];
+            if (score >= threshold) {
+                matched.push({ name: prettifyTag(entry.name), score });
             }
         }
         matched.sort((a, b) => b.score - a.score);

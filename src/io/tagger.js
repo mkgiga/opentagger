@@ -212,14 +212,23 @@ export async function ensureAutotagReady() {
 }
 
 /**
- * Decode an image Blob and produce the wd-tagger input: a square
- * white-padded NHWC Float32Array in BGR channel order, values 0-255.
+ * Decode an image Blob and produce the model's input tensor data,
+ * driven entirely by the `input` spec the main process serves with
+ * taggerStatus: { size, layout, channelOrder, padColor, normalize }.
  */
-async function preprocess(blob, size) {
+async function preprocess(blob, input) {
+    const {
+        size,
+        layout = "nhwc",
+        channelOrder = "rgb",
+        padColor = 255,
+        normalize = null,
+    } = input;
+
     const bitmap = await createImageBitmap(blob);
     const canvas = new OffscreenCanvas(size, size);
     const ctx = canvas.getContext("2d");
-    ctx.fillStyle = "#ffffff";
+    ctx.fillStyle = `rgb(${padColor}, ${padColor}, ${padColor})`;
     ctx.fillRect(0, 0, size, size);
 
     const scale = Math.min(
@@ -232,19 +241,32 @@ async function preprocess(blob, size) {
     bitmap.close();
 
     const { data } = ctx.getImageData(0, 0, size, size); // RGBA
-    const out = new Float32Array(size * size * 3);
-    for (let i = 0, j = 0; i < data.length; i += 4) {
-        out[j++] = data[i + 2]; // B
-        out[j++] = data[i + 1]; // G
-        out[j++] = data[i]; // R
+    // Per-channel offsets into each RGBA pixel, in output order.
+    const channels =
+        channelOrder === "bgr" ? [2, 1, 0] : [0, 1, 2];
+    const pixelCount = size * size;
+    const out = new Float32Array(pixelCount * 3);
+
+    for (let p = 0; p < pixelCount; p++) {
+        for (let c = 0; c < 3; c++) {
+            let value = data[p * 4 + channels[c]];
+            if (normalize) {
+                value =
+                    (value / 255 - normalize.mean) / normalize.std;
+            }
+            // nhwc: [pixel][channel]; nchw: [channel][pixel]
+            const index =
+                layout === "nchw"
+                    ? c * pixelCount + p
+                    : p * 3 + c;
+            out[index] = value;
+        }
     }
     return out;
 }
 
-const NATIVE_INPUT_SIZE = 448; // wd-v3 taggers take 448×448
-
-async function autotagNative(imageBlob, modelId) {
-    const pixels = await preprocess(imageBlob, NATIVE_INPUT_SIZE);
+async function autotagNative(imageBlob, modelId, inputSpec) {
+    const pixels = await preprocess(imageBlob, inputSpec);
     const result = await native.taggerRun(modelId, pixels);
     if (!result.success) {
         throw new Error(result.error || "Autotagging failed.");
@@ -292,7 +314,7 @@ export async function autotagImage(imageBlob, imageName) {
     if (native) {
         const status = await native.taggerStatus(modelId);
         if (status.supported && status.downloaded) {
-            return autotagNative(imageBlob, modelId);
+            return autotagNative(imageBlob, modelId, status.input);
         }
     }
     return autotagHttp(imageBlob, imageName, modelId);
