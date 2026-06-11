@@ -54,9 +54,13 @@ const { storage, modelsDir } = require("./storage.cjs");
 //                     arrays are per-channel in RGB order
 //   output            { activation: "none" | "sigmoid" } — "none" means
 //                     the graph already emits probabilities
-//   executionProviders optional EP list overriding the platform
-//                     default (e.g. ["webgpu", "cpu"] for graphs whose
-//                     dynamic shapes break DirectML)
+//   executionProviders optional prioritized EP fallback chain
+//                     overriding the platform default; entries are
+//                     tried in order at session creation AND at run
+//                     time (some EPs create fine but fail on run),
+//                     settling on the first one that works (e.g.
+//                     ["webgpu", "cpu"] for graphs whose dynamic
+//                     shapes break DirectML)
 //   vocabulary        { file, format: "wd-csv" | "jtp-json" |
 //                     "idx2tag-json" }
 //   thresholds        per-category score cutoffs; categories a model's
@@ -309,52 +313,54 @@ function loadVocabulary(modelId, spec) {
     }
 }
 
-function preferredExecutionProviders(spec) {
+// Prioritized fallback chain: best first, CPU as the universal last
+// resort. Per-model specs override this wholesale.
+function executionProviderChain(spec) {
     if (spec.executionProviders) return spec.executionProviders;
     switch (process.platform) {
         case "win32":
-            return ["dml", "cpu"];
+            return ["dml", "webgpu", "cpu"];
         case "darwin":
-            return ["coreml", "cpu"];
+            return ["coreml", "webgpu", "cpu"];
         default:
-            return ["cuda", "cpu"];
+            return ["cuda", "webgpu", "cpu"];
     }
 }
 
-async function getSession(modelId, spec, progress) {
-    if (sessions.has(modelId)) return sessions.get(modelId);
-
+// Try chain entries from `startIndex` until one yields a session.
+// Returns { session, ep, epIndex } so callers can advance further on
+// run-time failures.
+async function createSessionFromChain(
+    modelId,
+    spec,
+    chain,
+    startIndex,
+    progress
+) {
     const modelPath = join(modelDir(modelId), "model.onnx");
-    progress({
-        phase: "load",
-        message: `Loading ${spec.label} (first run takes a moment)…`,
-        percent: null,
-    });
-
-    let session;
-    let cpuOnly = false;
-    const providers = preferredExecutionProviders(spec);
-    try {
-        session = await ort.InferenceSession.create(modelPath, {
-            executionProviders: providers,
+    let lastError = null;
+    for (let i = startIndex; i < chain.length; i++) {
+        const ep = chain[i];
+        progress({
+            phase: "load",
+            message: `Loading ${spec.label} (${ep})…`,
+            percent: null,
         });
-        console.log(
-            `[opentagger] ONNX session for ${modelId} created (EPs: ${providers.join(", ")})`
-        );
-    } catch (err) {
-        console.warn(
-            `[opentagger] EPs [${providers.join(", ")}] failed (${err.message}); falling back to CPU.`
-        );
         try {
-            session = await ort.InferenceSession.create(modelPath, {
-                executionProviders: ["cpu"],
-            });
-            cpuOnly = true;
-        } catch (cpuErr) {
-            if (/protobuf parsing failed|load model/i.test(cpuErr.message)) {
-                // The file on disk is unreadable as a model — wipe it
-                // so the next attempt re-downloads instead of failing
-                // forever.
+            const session = await ort.InferenceSession.create(
+                modelPath,
+                { executionProviders: [ep] }
+            );
+            console.log(
+                `[opentagger] ONNX session for ${modelId} created (EP: ${ep})`
+            );
+            return { session, ep, epIndex: i };
+        } catch (err) {
+            if (/protobuf parsing failed|load model/i.test(err.message)) {
+                // The file on disk is unreadable as a model — no EP
+                // will fix that. Wipe it so the next attempt
+                // re-downloads instead of failing forever.
+                sessions.delete(modelId);
                 rmSync(modelDir(modelId), {
                     recursive: true,
                     force: true,
@@ -365,13 +371,47 @@ async function getSession(modelId, spec, progress) {
                         "to download it again."
                 );
             }
-            throw cpuErr;
+            console.warn(
+                `[opentagger] ${modelId}: EP "${ep}" failed to create (${err.message})`
+            );
+            lastError = err;
         }
     }
+    throw (
+        lastError ??
+        new Error(`No execution provider could load ${spec.label}.`)
+    );
+}
 
+async function getSession(modelId, spec, progress) {
+    if (sessions.has(modelId)) return sessions.get(modelId);
+
+    // Only one model is in use at a time; release other models'
+    // sessions so switching the preferred model doesn't pile up
+    // multi-GB sessions in RAM/VRAM.
+    for (const [otherId, other] of sessions) {
+        sessions.delete(otherId);
+        console.log(`[opentagger] Releasing ONNX session for ${otherId}`);
+        other.session
+            .release()
+            .catch((err) =>
+                console.warn(
+                    `[opentagger] Failed to release session for ${otherId}: ${err.message}`
+                )
+            );
+    }
+
+    const chain = executionProviderChain(spec);
+    const created = await createSessionFromChain(
+        modelId,
+        spec,
+        chain,
+        0,
+        progress
+    );
     const entry = {
-        session,
-        cpuOnly,
+        ...created,
+        chain,
         vocabulary: loadVocabulary(modelId, spec),
     };
     sessions.set(modelId, entry);
@@ -379,7 +419,7 @@ async function getSession(modelId, spec, progress) {
     // stuck on the "Loading…" message.
     progress({
         phase: "done",
-        message: `${spec.label} loaded.`,
+        message: `${spec.label} loaded (${created.ep}).`,
         percent: null,
     });
     return entry;
@@ -434,42 +474,38 @@ async function runAutotag(modelId, pixels, progress, options = {}) {
             tensorDims(spec.input, width, height)
         );
 
+        // Walk the EP chain: some EPs create a session fine but fail
+        // at run time (unsupported ops, dynamic shapes). Each failure
+        // advances to the next chain entry; the session that works is
+        // kept for future runs.
         let results;
-        try {
-            results = await entry.session.run({
-                [entry.session.inputNames[0]]: input,
-            });
-        } catch (runErr) {
-            // Some models create a session fine on a GPU EP but fail
-            // at run time (unsupported ops, dynamic shapes). Retry
-            // once on CPU and keep the CPU session for future runs.
-            if (entry.cpuOnly) throw runErr;
-            console.warn(
-                `[opentagger] ${modelId} failed at run time on GPU EP (${runErr.message}); retrying on CPU.`
-            );
-            progress({
-                phase: "load",
-                message: `Reloading ${spec.label} on CPU…`,
-                percent: null,
-            });
-            const cpuSession = await ort.InferenceSession.create(
-                join(modelDir(modelId), "model.onnx"),
-                { executionProviders: ["cpu"] }
-            );
-            entry = {
-                session: cpuSession,
-                cpuOnly: true,
-                vocabulary: entry.vocabulary,
-            };
-            sessions.set(modelId, entry);
-            progress({
-                phase: "done",
-                message: `${spec.label} loaded (CPU).`,
-                percent: null,
-            });
-            results = await entry.session.run({
-                [entry.session.inputNames[0]]: input,
-            });
+        for (;;) {
+            try {
+                results = await entry.session.run({
+                    [entry.session.inputNames[0]]: input,
+                });
+                break;
+            } catch (runErr) {
+                const next = entry.epIndex + 1;
+                if (next >= entry.chain.length) throw runErr;
+                console.warn(
+                    `[opentagger] ${modelId} failed at run time on EP "${entry.ep}" (${runErr.message}); trying "${entry.chain[next]}".`
+                );
+                const created = await createSessionFromChain(
+                    modelId,
+                    spec,
+                    entry.chain,
+                    next,
+                    progress
+                );
+                entry = { ...entry, ...created };
+                sessions.set(modelId, entry);
+                progress({
+                    phase: "done",
+                    message: `${spec.label} loaded (${created.ep}).`,
+                    percent: null,
+                });
+            }
         }
         const { vocabulary } = entry;
         const scores = results[entry.session.outputNames[0]].data;
