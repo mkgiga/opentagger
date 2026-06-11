@@ -2,12 +2,29 @@
 //
 // Builds (and pops up) a <context-menu> populated from a simple item
 // list. Item shape:
-//   { label, callback?, items?, disabled?, hidden?, dataAction?, type? }
+//   { label, callback?, items?, disabled?, hidden?, dataAction?,
+//     type?, notImplemented? }
 // Where `type: "divider"` renders an <hr>, `items` makes a submenu,
 // and `disabled`/`hidden` may be booleans or predicates over the
-// trigger element/event.
+// trigger element/event. `notImplemented` marks a planned-but-missing
+// feature: the item renders struck through with a tooltip, and
+// clicking it explains instead of doing nothing (pass a string for a
+// custom explanation).
 
 import { state } from "../core/state.js";
+import { showConfirmationModal } from "./modal.js";
+
+function applyNotImplemented(menuItem, item) {
+    menuItem.classList.add("not-implemented");
+    menuItem.title = "Not implemented yet";
+    menuItem.callback = () =>
+        showConfirmationModal(
+            typeof item.notImplemented === "string"
+                ? item.notImplemented
+                : `"${item.label}" is not implemented yet — it's planned for a future version.`,
+            [{ text: "OK" }]
+        );
+}
 
 /**
  * Build a list of "Add All from <group>" submenu items so context
@@ -73,7 +90,9 @@ export function createContextMenu(items, triggerElementOrEvent) {
                 isDisabled = item.disabled;
             }
 
-            if (isDisabled) {
+            if (item.notImplemented) {
+                applyNotImplemented(menuItem, item);
+            } else if (isDisabled) {
                 menuItem.classList.add("disabled");
             } else {
                 if (
@@ -132,7 +151,9 @@ export function createContextMenu(items, triggerElementOrEvent) {
                             isSubDisabled = subItem.disabled;
                         }
 
-                        if (isSubDisabled) {
+                        if (subItem.notImplemented) {
+                            applyNotImplemented(subMenuItem, subItem);
+                        } else if (isSubDisabled) {
                             subMenuItem.classList.add("disabled");
                         } else {
                             if (

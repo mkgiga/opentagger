@@ -612,8 +612,8 @@ document.addEventListener("DOMContentLoaded", async () => {
                     break;
                 case "edit":
                     items = [
-                        { label: "Undo (NYI)", disabled: true },
-                        { label: "Redo (NYI)", disabled: true },
+                        { label: "Undo", notImplemented: true },
+                        { label: "Redo", notImplemented: true },
                         { type: "divider" },
                         {
                             label: "Clear Search",
@@ -651,8 +651,8 @@ document.addEventListener("DOMContentLoaded", async () => {
                     break;
                 case "view":
                     items = [
-                        { label: "Zoom In (NYI)", disabled: true },
-                        { label: "Zoom Out (NYI)", disabled: true },
+                        { label: "Zoom In", notImplemented: true },
+                        { label: "Zoom Out", notImplemented: true },
                         { type: "divider" },
                         {
                             label: "Re-check All Requirements",
@@ -680,7 +680,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                     break;
                 case "help":
                     items = [
-                        { label: "About (NYI)", disabled: true },
+                        { label: "About", notImplemented: true },
                     ];
                     break;
                 default:

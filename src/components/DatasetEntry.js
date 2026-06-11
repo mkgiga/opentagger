@@ -262,27 +262,28 @@ class DatasetEntry extends HTMLElement {
             },
             { type: "divider" },
             {
-                label: `Copy Tags (${targetCount} selected) (NYI)`,
-                disabled: true,
+                label: `Copy Tags (${targetCount} selected)`,
+                notImplemented: true,
             },
             {
-                label: `Paste Tags (${targetCount} selected) (NYI)`,
-                disabled: true,
+                label: `Paste Tags (${targetCount} selected)`,
+                notImplemented: true,
             },
             { type: "divider" },
             {
-                label: `Add Tags to ${targetCount} Selected... (NYI via UI)`,
-                disabled: () => targetCount === 0,
-                callback: () => {
-                    /* TODO: Prompt for tags */
-                },
+                label: `Add Tags to ${targetCount} Selected…`,
+                notImplemented:
+                    "Adding tags to a selection has no dialog yet. " +
+                    "Meanwhile: open the developer console (F1) and use " +
+                    "/select <query> followed by /add <tag1>, <tag2>, …",
             },
             {
-                label: `Remove Tags from ${targetCount} Selected... (NYI via UI)`,
-                disabled: () => targetCount === 0,
-                callback: () => {
-                    /* TODO: Prompt for tags */
-                },
+                label: `Remove Tags from ${targetCount} Selected…`,
+                notImplemented:
+                    "Removing tags from a selection has no dialog yet. " +
+                    "Meanwhile: open the developer console (F1) and use " +
+                    "/select <query> followed by /remove <tag1>, <tag2>, … " +
+                    "(or /remove * for all).",
             },
             { type: "divider" },
             {
