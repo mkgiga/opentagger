@@ -16,6 +16,7 @@ import {
     customCodeMirrorHints,
     toggleDevConsole,
     processConsoleInput,
+    logToConsole,
 } from "./ui/devConsole.js";
 import { generatePreferencesUI } from "./ui/preferencesPanel.js";
 import {
@@ -102,6 +103,28 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     });
 
+    function executeConsoleInput(cm) {
+        const inputValue = cm.getValue().trim();
+        if (inputValue === "") return;
+
+        logToConsole(`> ${inputValue}`, "command");
+        cm.setValue("");
+        processConsoleInput(inputValue);
+
+        if (
+            state.consoleHistory.length === 0 ||
+            state.consoleHistory[
+                state.consoleHistory.length - 1
+            ] !== inputValue
+        ) {
+            state.consoleHistory.push(inputValue);
+        }
+        if (state.consoleHistory.length > 50)
+            state.consoleHistory.shift();
+        state.consoleHistoryIndex = state.consoleHistory.length;
+        state.currentConsoleInputBuffer = "";
+    }
+
     if (consoleTextArea && typeof CodeMirror !== "undefined") {
         state.consoleCodeMirrorInstance = CodeMirror.fromTextArea(
             consoleTextArea,
@@ -112,28 +135,26 @@ document.addEventListener("DOMContentLoaded", async () => {
                 autoCloseBrackets: true,
                 matchBrackets: true,
                 extraKeys: {
+                    // Enter runs slash commands immediately; for
+                    // JavaScript it inserts a newline (multiline
+                    // editing) and Ctrl+Enter executes.
                     Enter: (cm) => {
                         const inputValue = cm.getValue().trim();
-                        if (inputValue === "") return;
-
-                        logToConsole(`> ${inputValue}`, "command");
-                        cm.setValue("");
-                        processConsoleInput(inputValue);
-
-                        if (
-                            state.consoleHistory.length === 0 ||
-                            state.consoleHistory[
-                                state.consoleHistory.length - 1
-                            ] !== inputValue
-                        ) {
-                            state.consoleHistory.push(inputValue);
+                        if (!inputValue.startsWith("/")) {
+                            return CodeMirror.Pass;
                         }
-                        if (state.consoleHistory.length > 50)
-                            state.consoleHistory.shift();
-                        state.consoleHistoryIndex = state.consoleHistory.length;
-                        state.currentConsoleInputBuffer = "";
+                        executeConsoleInput(cm);
+                    },
+                    "Ctrl-Enter": (cm) => {
+                        if (cm.getValue().trim() === "") return;
+                        executeConsoleInput(cm);
                     },
                     Up: (cm) => {
+                        // Inside a multiline buffer, Up moves the
+                        // cursor; history only from the first line.
+                        if (cm.getCursor().line > 0) {
+                            return CodeMirror.Pass;
+                        }
                         if (
                             state.consoleHistoryIndex ===
                                 state.consoleHistory.length &&
@@ -152,6 +173,14 @@ document.addEventListener("DOMContentLoaded", async () => {
                         return true;
                     },
                     Down: (cm) => {
+                        // Inside a multiline buffer, Down moves the
+                        // cursor; history only from the last line.
+                        if (
+                            cm.getCursor().line <
+                            cm.lineCount() - 1
+                        ) {
+                            return CodeMirror.Pass;
+                        }
                         if (
                             state.consoleHistoryIndex <
                             state.consoleHistory.length - 1

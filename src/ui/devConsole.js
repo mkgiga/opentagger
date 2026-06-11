@@ -346,7 +346,7 @@ export function toggleDevConsole(focusInput = true) {
             state.consoleCodeMirrorInstance.getValue().trim() === ""
         ) {
             logToConsole(
-                "Console opened. Type /help or JS code. Ctrl+Space for hints. Up/Down for history.",
+                "Console opened. /commands run on Enter; JavaScript runs on Ctrl+Enter (Enter adds a line). Type /help for commands. Ctrl+Space for hints, Up/Down for history.",
                 "info"
             );
             state.hasShownConsoleWelcomeMessage = true;
