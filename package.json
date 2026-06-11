@@ -5,6 +5,7 @@
   "type": "module",
   "main": "electron/main.cjs",
   "description": "An open-source, user-friendly tool for captioning and tagging images.",
+  "author": "mkgiga",
   "license": "MIT",
   "scripts": {
     "dev": "vite",
