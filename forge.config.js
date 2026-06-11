@@ -14,6 +14,9 @@ const RUNTIME_NODE_MODULES = [
     "onnxruntime-common",
     "unstorage",
     "destr",
+    "electron-squirrel-startup",
+    "debug",
+    "ms",
 ];
 
 // Paths (relative to project root, leading "/") that never ship.

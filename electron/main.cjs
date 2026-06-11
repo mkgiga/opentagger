@@ -19,6 +19,14 @@ const { join } = require("node:path");
 const tagger = require("./tagger.cjs");
 const { storage } = require("./storage.cjs");
 
+// Squirrel.Windows runs the app with --squirrel-* flags during
+// install/update/uninstall and expects it to handle them (create or
+// remove shortcuts) and exit quickly. Without this, Setup.exe waits
+// on the spinning splash forever and then reports a failed install.
+if (require("electron-squirrel-startup")) {
+    app.quit();
+}
+
 // ELECTRON_DEV is set by the `npm run electron:dev` script. In
 // packaged builds app.isPackaged is true anyway, but the env var is
 // the explicit signal that the Vite dev server is running.
