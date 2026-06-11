@@ -16,6 +16,7 @@ import {
     customCodeMirrorHints,
     toggleDevConsole,
     processConsoleInput,
+    executeConsoleInput,
     logToConsole,
 } from "./ui/devConsole.js";
 import { generatePreferencesUI } from "./ui/preferencesPanel.js";
@@ -102,28 +103,6 @@ document.addEventListener("DOMContentLoaded", async () => {
             );
         }
     });
-
-    function executeConsoleInput(cm) {
-        const inputValue = cm.getValue().trim();
-        if (inputValue === "") return;
-
-        logToConsole(`> ${inputValue}`, "command");
-        cm.setValue("");
-        processConsoleInput(inputValue);
-
-        if (
-            state.consoleHistory.length === 0 ||
-            state.consoleHistory[
-                state.consoleHistory.length - 1
-            ] !== inputValue
-        ) {
-            state.consoleHistory.push(inputValue);
-        }
-        if (state.consoleHistory.length > 50)
-            state.consoleHistory.shift();
-        state.consoleHistoryIndex = state.consoleHistory.length;
-        state.currentConsoleInputBuffer = "";
-    }
 
     if (consoleTextArea && typeof CodeMirror !== "undefined") {
         state.consoleCodeMirrorInstance = CodeMirror.fromTextArea(

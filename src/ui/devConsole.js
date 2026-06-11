@@ -40,6 +40,32 @@ export function logToConsole(
         state.consoleOutputElement.scrollHeight;
 }
 
+/**
+ * Execute the console buffer: log it, clear the editor, run it, and
+ * record it in history. Shared by the Enter/Ctrl+Enter keymap and by
+ * autocomplete picks of parameterless slash commands.
+ */
+export function executeConsoleInput(cm) {
+    const inputValue = cm.getValue().trim();
+    if (inputValue === "") return;
+
+    logToConsole(`> ${inputValue}`, "command");
+    cm.setValue("");
+    processConsoleInput(inputValue);
+
+    if (
+        state.consoleHistory.length === 0 ||
+        state.consoleHistory[state.consoleHistory.length - 1] !==
+            inputValue
+    ) {
+        state.consoleHistory.push(inputValue);
+    }
+    if (state.consoleHistory.length > 50)
+        state.consoleHistory.shift();
+    state.consoleHistoryIndex = state.consoleHistory.length;
+    state.currentConsoleInputBuffer = "";
+}
+
 export function customCodeMirrorHints(editor, options) {
     const cursor = editor.getCursor();
     const line = editor.getLine(cursor.line);
@@ -155,8 +181,19 @@ export function customCodeMirrorHints(editor, options) {
                             displaySignature = "";
                         }
                     }
+                    // Parameterless commands execute immediately on
+                    // pick; the rest complete to "/cmd " for the user
+                    // to finish typing arguments.
+                    const takesParams =
+                        displaySignature.trim() !== "";
                     return {
                         text: "/" + cmd + " ",
+                        hint: takesParams
+                            ? undefined
+                            : (cm) => {
+                                  cm.setValue(`/${cmd}`);
+                                  executeConsoleInput(cm);
+                              },
                         displayText: `/${cmd}${displaySignature}`,
                         render: function (element, self, data) {
                             const cmdNameEl =
