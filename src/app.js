@@ -627,7 +627,10 @@ document.addEventListener("DOMContentLoaded", async () => {
                                 document.getElementById("app")
                                     ?.activeTab !== "tagging",
                         },
-                        { type: "divider" },
+                    ];
+                    break;
+                case "select":
+                    items = [
                         {
                             label: "Select All Visible",
                             callback: () =>
