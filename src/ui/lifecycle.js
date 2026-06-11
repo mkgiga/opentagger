@@ -71,6 +71,7 @@ export function clearWorkspaceForNewProject() {
 
     opentaggerAPI.deselectAllEntries(true);
 
+    state.currentProjectName = null;
     clearProjectOverrides();
     refreshPreferencesUI();
 

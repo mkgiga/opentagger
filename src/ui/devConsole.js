@@ -431,16 +431,29 @@ export function processConsoleInput(inputValue) {
             typeof commandObject.func === "function"
         ) {
             try {
-                const result = commandObject.func(args);
-                if (result !== undefined) {
-                    logToConsole(
-                        result,
-                        "success",
-                        typeof result === "object" ||
-                            (typeof result === "string" &&
-                                result.includes("\n"))
-                    );
-                }
+                // Commands may be async; log whenever they resolve.
+                Promise.resolve(commandObject.func(args))
+                    .then((result) => {
+                        if (result !== undefined) {
+                            logToConsole(
+                                result,
+                                "success",
+                                typeof result === "object" ||
+                                    (typeof result === "string" &&
+                                        result.includes("\n"))
+                            );
+                        }
+                    })
+                    .catch((e) => {
+                        logToConsole(
+                            `Error executing command /${commandName}: ${e.message}`,
+                            "error"
+                        );
+                        console.error(
+                            `Command /${commandName} error:`,
+                            e
+                        );
+                    });
             } catch (e) {
                 logToConsole(
                     `Error executing command /${commandName}: ${e.message}`,

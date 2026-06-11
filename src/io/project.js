@@ -242,6 +242,7 @@ export function handleProjectFileSelect(event) {
         try {
             const zipData = e.target.result;
             await loadProjectFromZip(zipData);
+            state.currentProjectName = file.name;
             showMainAppUI();
             // Ensure tagging tab is active after loading a project
             const appTabs = document.getElementById("app");

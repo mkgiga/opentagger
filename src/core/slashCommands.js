@@ -5,6 +5,11 @@
 // `signature` string for hint rendering and `apiRef` for help text.
 
 import { opentaggerAPI } from "./api.js";
+import { state } from "./state.js";
+import {
+    getPreference,
+    getProjectOverrides,
+} from "./preferences.js";
 import { parseRawTagInput } from "../utils/text.js";
 
 export const slashCommands = {
@@ -132,5 +137,111 @@ export const slashCommands = {
         },
         signature: "",
         apiRef: "help",
+    },
+    status: {
+        func: async () => {
+            const lines = [];
+
+            lines.push(
+                `Project:    ${
+                    state.currentProjectName ??
+                    "(unsaved — new workspace)"
+                }`
+            );
+
+            const area =
+                state.mainContentAreaElement ??
+                document.getElementById("main-content-area");
+            const all = area
+                ? Array.from(area.querySelectorAll("dataset-entry"))
+                : [];
+            const visible = all.filter(
+                (entry) => entry.style.display !== "none"
+            );
+            const hidden = all.length - visible.length;
+            lines.push(
+                `Entries:    ${all.length} total, ${visible.length} visible` +
+                    (hidden ? `, ${hidden} hidden by search` : "")
+            );
+
+            const selected = opentaggerAPI.getSelectedEntries();
+            if (selected.length > 0) {
+                const names = selected
+                    .slice(0, 3)
+                    .map(
+                        (entry) =>
+                            entry.originalImageName || "(unnamed)"
+                    )
+                    .join(", ");
+                lines.push(
+                    `Selection:  ${selected.length} entr${
+                        selected.length === 1 ? "y" : "ies"
+                    } — ${names}${
+                        selected.length > 3
+                            ? ` (+${selected.length - 3} more)`
+                            : ""
+                    }`
+                );
+            } else {
+                lines.push("Selection:  none");
+            }
+
+            const query = state.searchInput?.value.trim();
+            lines.push(
+                `Search:     ${query ? `"${query}"` : "(none)"}`
+            );
+
+            const groups = Array.from(
+                document.querySelectorAll(
+                    "#tag-group-list tag-group"
+                )
+            );
+            lines.push(
+                `Tag groups: ${groups.length}` +
+                    (groups.length
+                        ? ` (${groups
+                              .map((g) =>
+                                  g.getAttribute("group-name")
+                              )
+                              .join(", ")})`
+                        : "")
+            );
+
+            const overrideCount = Object.keys(
+                getProjectOverrides()
+            ).length;
+            lines.push(
+                `Prefs:      ${overrideCount} project override${
+                    overrideCount === 1 ? "" : "s"
+                } (saved into the project file)`
+            );
+
+            const modelId = getPreference(
+                "tagging.autotagging.autotaggingModel"
+            );
+            let modelLine = `Autotagger: ${modelId}`;
+            const native = window.opentaggerNative;
+            if (native) {
+                const tagger = await native.taggerStatus(modelId);
+                if (!tagger.supported) {
+                    modelLine +=
+                        " — no built-in engine (legacy HTTP backend only)";
+                } else if (tagger.downloading) {
+                    modelLine += " — downloading…";
+                } else if (tagger.downloaded) {
+                    modelLine += " — downloaded, ready";
+                } else {
+                    modelLine += " — not downloaded yet";
+                }
+            }
+            lines.push(modelLine);
+
+            lines.push("");
+            lines.push(
+                "Tag commands (/add, /remove, /filter, non-global /rename) act on the selection; /select and /count act on visible entries."
+            );
+            return lines.join("\n");
+        },
+        signature: "",
     },
 };

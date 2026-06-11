@@ -11,6 +11,11 @@ export const state = {
     CONSOLE_MAX_HEIGHT_PERCENT: 40,
     MAX_SUGGESTIONS: 10,
 
+    // --- Project ---
+    // Filename of the loaded .loraproj; null for a new/unsaved
+    // workspace.
+    currentProjectName: null,
+
     // --- Drag / drop ---
     draggedElement: null,
 
