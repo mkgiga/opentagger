@@ -1,0 +1,33 @@
+# electron-builder is used ONLY to wrap the Forge-packaged app
+# (out/opentagger-win32-x64, built by `bun run package`) into the NSIS
+# wizard installer and the portable exe — it does not package the app
+# itself. Run via the `installers` script, which passes --prepackaged.
+#
+# Squirrel (out/make, via `bun run make`) remains the auto-update-
+# capable install path.
+
+appId: com.mkgiga.opentagger
+productName: opentagger
+
+directories:
+  # NOT "dist" — that's the Vite build output.
+  output: out/installers
+
+win:
+  target:
+    - nsis
+    - portable
+
+nsis:
+  # Full wizard: license-free Next/Next/Finish with a directory chooser.
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  artifactName: ${productName}-${version}-setup.${ext}
+
+portable:
+  # Self-extracting single exe: unpacks to a temp dir on every launch,
+  # which for an app this size adds noticeable startup time. The zip
+  # from `bun run make` is the faster "portable" (extract once).
+  artifactName: ${productName}-${version}-portable.${ext}

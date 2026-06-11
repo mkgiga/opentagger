@@ -14,7 +14,8 @@
     "electron": "electron .",
     "electron:dev": "concurrently -k -n vite,electron -c blue,magenta \"vite\" \"wait-on http://localhost:5173 && cross-env ELECTRON_DEV=1 electron .\"",
     "package": "vite build && electron-forge package",
-    "make": "vite build && electron-forge make"
+    "make": "vite build && electron-forge make",
+    "installers": "bun run package && electron-builder --win --prepackaged out/opentagger-win32-x64"
   },
   "devDependencies": {
     "@electron-forge/cli": "^7.11.1",
@@ -23,6 +24,7 @@
     "concurrently": "^9.2.1",
     "cross-env": "^7.0.3",
     "electron": "^32.3.3",
+    "electron-builder": "^26.15.2",
     "vite": "^5.4.10",
     "vite-plugin-singlefile": "^2.0.3",
     "wait-on": "^8.0.5"
