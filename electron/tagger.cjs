@@ -153,8 +153,33 @@ const KAOMOJI = new Set([
     "x_x", "|_|", "||_||",
 ]);
 
-const sessions = new Map(); // modelId -> { session, vocabulary }
+const sessions = new Map(); // modelId -> { session, vocabulary, ... }
 const downloads = new Map(); // modelId -> in-flight download Promise
+let idleReleaseTimer = null;
+
+// Release the model after `minutes` without a run (0/empty: never).
+// Rescheduled after every run; cleared while a run is in progress.
+function scheduleIdleRelease(modelId, minutes) {
+    if (idleReleaseTimer) clearTimeout(idleReleaseTimer);
+    idleReleaseTimer = null;
+    if (!minutes || minutes <= 0) return;
+    idleReleaseTimer = setTimeout(() => {
+        const entry = sessions.get(modelId);
+        if (!entry) return;
+        sessions.delete(modelId);
+        console.log(
+            `[opentagger] Releasing idle ONNX session for ${modelId}`
+        );
+        entry.session
+            .release()
+            .catch((err) =>
+                console.warn(
+                    `[opentagger] Failed to release idle session: ${err.message}`
+                )
+            );
+    }, minutes * 60_000);
+    idleReleaseTimer.unref?.();
+}
 
 function modelDir(modelId) {
     return join(modelsDir, modelId);
@@ -440,7 +465,8 @@ function tensorDims(input, width, height) {
 // the renderer according to the model's `input` spec. User
 // preferences arrive via `options`: `thresholds` ({ category: cutoff })
 // overrides the spec's defaults, `replaceUnderscores` (default true)
-// controls tag-name prettifying.
+// controls tag-name prettifying, `idleTimeoutMinutes` (default 0)
+// releases the session after that long without a run.
 async function runAutotag(modelId, pixels, progress, options = {}) {
     const spec = MODELS[modelId];
     if (!spec) {
@@ -457,6 +483,8 @@ async function runAutotag(modelId, pixels, progress, options = {}) {
     }
 
     try {
+        // Don't release mid-run; rescheduled in the finally below.
+        if (idleReleaseTimer) clearTimeout(idleReleaseTimer);
         let entry = await getSession(modelId, spec, progress);
         const { width, height } = pixels;
         const data =
@@ -544,6 +572,8 @@ async function runAutotag(modelId, pixels, progress, options = {}) {
             percent: null,
         });
         return { success: false, error: err.message };
+    } finally {
+        scheduleIdleRelease(modelId, options?.idleTimeoutMinutes ?? 0);
     }
 }
 

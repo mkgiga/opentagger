@@ -5,19 +5,23 @@
 // are cached on state.booruTags so subsequent calls are free.
 
 import { state } from "../core/state.js";
+import { getPreference } from "../core/preferences.js";
 
 export async function loadBooruTags() {
     if (state.booruTags.length > 0) return state.booruTags;
     if (state.booruTagsLoadingPromise) return state.booruTagsLoadingPromise;
 
-    console.log("Initiating booru tag loading...");
+    const csvFile = getPreference(
+        "tagging.autocompleteSuggestions.csvFile"
+    );
+    console.log(`Initiating booru tag loading (${csvFile})...`);
     // Relative path so this works under all three loaders:
     //   - http://localhost:5173 (vite dev)
     //   - http://localhost:8081 (FastAPI direct serve)
     //   - file:///path/to/dist/index.html (Electron production)
-    state.booruTagsLoadingPromise = fetch(
-        "assets/csv/danbooru_e621_merged.csv"
-    )
+    // Loaded once and cached for the session — changing the csvFile
+    // preference requires a restart (see RESTART_REQUIRED_PREFERENCES).
+    state.booruTagsLoadingPromise = fetch(`assets/csv/${csvFile}`)
         .then((response) => {
             if (!response.ok) {
                 throw new Error(

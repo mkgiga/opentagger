@@ -8,6 +8,7 @@
 
 import {
     PREFERENCE_DEFAULTS,
+    RESTART_REQUIRED_PREFERENCES,
     getPreferenceAtScope,
     setPreference,
     clearPreference,
@@ -44,6 +45,12 @@ function renderLeaf(key, node, itemPath, container) {
     const label = document.createElement("label");
     label.textContent = keyToLabel(key);
     label.htmlFor = `pref-${itemPath}`;
+    if (RESTART_REQUIRED_PREFERENCES.has(itemPath)) {
+        const note = document.createElement("span");
+        note.className = "preference-restart-note";
+        note.textContent = " (requires restart)";
+        label.appendChild(note);
+    }
     itemDiv.appendChild(label);
 
     const current = getPreferenceAtScope(itemPath, currentScope);

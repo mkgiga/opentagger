@@ -35,6 +35,12 @@
     color: #888;
 }
 
+.preference-restart-note {
+    font-size: 0.85em;
+    color: #999;
+    font-style: italic;
+}
+
 /* A project-scope item whose value overrides the global one. */
 .preference-item.overridden label {
     color: var(--splash-ide-accent, #007acc);

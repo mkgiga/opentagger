@@ -48,6 +48,11 @@ export const PREFERENCE_DEFAULTS = {
             // replace them with spaces in added tags (kaomoji like
             // ">_<" are always kept as-is).
             replaceUnderscores: true,
+            // Release a loaded model from RAM/VRAM after this many
+            // minutes without an autotag run. 0 keeps it loaded until
+            // the app closes. Applied live (it's just a timer around
+            // the session); the next run reloads the model.
+            modelIdleTimeoutMinutes: 10,
             autotaggingModel: {
                 "@type": "select",
                 value: "wd-vit-tagger-v3",
@@ -75,6 +80,13 @@ export const PREFERENCE_DEFAULTS = {
         },
     },
 };
+
+// Preference paths whose value is only read once at startup — the
+// settings UI renders a "(requires restart)" note next to these.
+// Everything not listed here applies live.
+export const RESTART_REQUIRED_PREFERENCES = new Set([
+    "tagging.autocompleteSuggestions.csvFile",
+]);
 
 const STORAGE_KEY = "opentagger.preferences";
 

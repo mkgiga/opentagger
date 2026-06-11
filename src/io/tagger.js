@@ -333,6 +333,9 @@ async function autotagNative(imageBlob, modelId, inputSpec) {
         replaceUnderscores: getPreference(
             "tagging.autotagging.replaceUnderscores"
         ),
+        idleTimeoutMinutes: getPreference(
+            "tagging.autotagging.modelIdleTimeoutMinutes"
+        ),
     });
     if (!result.success) {
         throw new Error(result.error || "Autotagging failed.");
