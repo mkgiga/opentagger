@@ -18,7 +18,7 @@ const RUNTIME_NODE_MODULES = [
 
 // Paths (relative to project root, leading "/") that never ship.
 const IGNORED_PATHS =
-    /^\/(src|public|autotag|out|\.git|\.vscode|\.idea)(\/.*)?$|^\/(index\.html|tagger\.html|vite\.config\.js|forge\.config\.js|package-lock\.json|\.gitignore|README\.md|run\.(ps1|sh))$/;
+    /^\/(src|public|autotag|scripts|out|\.cache|\.git|\.vscode|\.idea)(\/.*)?$|^\/(index\.html|tagger\.html|vite\.config\.js|forge\.config\.js|package-lock\.json|bun\.lock|\.gitignore|README\.md|run\.(ps1|sh))$/;
 
 export default {
     packagerConfig: {
