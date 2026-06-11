@@ -14,7 +14,7 @@
 // Python sidecar. Models are downloaded into userData on the user's
 // first request, never at startup.
 
-const { app, BrowserWindow, shell, ipcMain } = require("electron");
+const { app, BrowserWindow, Menu, shell, ipcMain } = require("electron");
 const { join } = require("node:path");
 const tagger = require("./tagger.cjs");
 const { storage } = require("./storage.cjs");
@@ -92,6 +92,13 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
+    // The app renders its own in-page menu bar; drop Electron's
+    // native one. Kept on macOS, where the system menu carries the
+    // standard Cmd+C/V/Q accelerators and app conventions.
+    if (process.platform !== "darwin") {
+        Menu.setApplicationMenu(null);
+    }
+
     registerIpcHandlers();
     createWindow();
 
