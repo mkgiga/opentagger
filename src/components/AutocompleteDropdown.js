@@ -247,16 +247,12 @@ class AutocompleteDropdown extends HTMLElement {
                 }
                 break;
             case "Escape":
+                // Dismiss only the suggestions; the edit stays active.
+                // A second Escape (dropdown closed) reaches the input's
+                // own handler, which cancels the edit.
                 event.preventDefault();
                 event.stopPropagation();
                 this.hide();
-                // Dispatch an event so the DatasetTag can know Escape was pressed while dropdown was open
-                this.dispatchEvent(
-                    new CustomEvent("dropdown-escaped", {
-                        bubbles: true,
-                        composed: true,
-                    })
-                );
                 break;
         }
     }

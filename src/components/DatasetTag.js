@@ -32,8 +32,6 @@ export class DatasetTag extends HTMLElement {
         // For autocomplete
         this._boundHandleAutocompleteSelection =
             this._handleAutocompleteSelection.bind(this);
-        this._boundHandleAutocompleteEscape =
-            this._handleAutocompleteEscape.bind(this);
         this._boundHandleSpanInput =
             this._handleSpanInput.bind(this);
         this._debouncedHandleSpanInput = debounce(
@@ -123,10 +121,6 @@ export class DatasetTag extends HTMLElement {
                 "suggestion-selected",
                 this._boundHandleAutocompleteSelection
             );
-            state.globalTagAutocompleteDropdown.addEventListener(
-                "dropdown-escaped",
-                this._boundHandleAutocompleteEscape
-            );
         }
     }
     removeEventListeners() {
@@ -176,10 +170,6 @@ export class DatasetTag extends HTMLElement {
             state.globalTagAutocompleteDropdown.removeEventListener(
                 "suggestion-selected",
                 this._boundHandleAutocompleteSelection
-            );
-            state.globalTagAutocompleteDropdown.removeEventListener(
-                "dropdown-escaped",
-                this._boundHandleAutocompleteEscape
             );
         }
     }
@@ -308,22 +298,6 @@ export class DatasetTag extends HTMLElement {
             sel.addRange(range);
 
             this._processEditedText(span.textContent);
-        }
-    }
-
-    _handleAutocompleteEscape(e) {
-        const span = this.querySelector(
-            "span[contenteditable='true']"
-        );
-        // Check if this event is relevant to this specific tag instance
-        if (
-            span &&
-            state.globalTagAutocompleteDropdown._targetElement === span &&
-            e.target === state.globalTagAutocompleteDropdown
-        ) {
-            span.textContent = this._originalText;
-            span.contentEditable = "false";
-            // The dropdown already hid itself in its Escape handler.
         }
     }
 
